@@ -283,19 +283,32 @@ export class AutomationRunner {
 
     return text.replace(/\{\{(.+?)\}\}/g, (match, path) => {
       const result = getValue(path.trim());
-      console.log(`[Hydrator] Path: ${path.trim()} -> Result: ${typeof result === 'string' ? result.substring(0, 30) + '...' : (result ? '[Object]' : 'UNDEFINED')}`);
-      if (result === undefined || result === null) return match;
+      console.log(`[Hydrator] Path: ${path.trim()} -> Result: ${typeof result === 'string' ? result.substring(0, 30) + '...' : (result !== undefined ? '[Value]' : 'UNDEFINED')}`);
+      
+      // If result is null/undefined, return empty string to avoid showing raw {{code}} in output
+      if (result === undefined || result === null) return "";
       return typeof result === 'object' ? JSON.stringify(result) : String(result);
     });
   }
 
   private async runAINode(node: WorkflowNode, prompt: string): Promise<any> {
+    // 0. SMART INJECTOR: If the prompt doesn't seem to contain the dynamic data (no {{}} or short), 
+    // and we have trigger body, append it automatically.
+    let finalPrompt = prompt;
+    const hasDynamicTag = (node.description || "").includes('{{');
+    const triggerBody = this._triggerData?.body?.plainText || this._triggerData?.body;
+
+    if (!hasDynamicTag && triggerBody) {
+       console.log(`[Smart Injector] No data tag found in AI node. Auto-appending email body.`);
+       finalPrompt = `${prompt}\n\n--- EMAIL BODY ---\n${triggerBody}`;
+    }
+
     // SWITCH: Using Gemini API (v1.5 Flash) due to OpenAI quota limits
     const geminiKey = process.env.GEMINI_API_KEY_2 || process.env.GEMINI_API_KEY;
     if (!geminiKey) throw new Error("GEMINI_API_KEY_2 not found in environment. Please add it to Vercel/local env.");
 
     // Safely strip HTML out of raw emails to aggressively conserve tokens.
-    const cleanPrompt = prompt.replace(/<[^>]*>?/gm, '').substring(0, 8000);
+    const cleanPrompt = finalPrompt.replace(/<[^>]*>?/gm, '').substring(0, 10000);
     const systemInstruction = "You are an automated extraction engine. Always output ONLY raw JSON formatted exactly as requested. Do not wrap in markdown tags like ```json.";
 
     console.log(`[AI Node] Prompt Sent to Gemini: ${cleanPrompt.substring(0, 200)}...`);
