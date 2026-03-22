@@ -252,27 +252,48 @@ export function AutomationsView() {
     }
   }
 
+  const getWorkflowTitle = (inst: AutomationInstance): string => {
+    // If the instance already has a name, use it
+    if (inst.workflow_name && inst.workflow_name !== 'Untitled Workflow') return inst.workflow_name;
+    
+    // Otherwise, try to find the workflow blueprint
+    const wf = workflows.find(w => w.id === inst.workflow_id);
+    if (wf) {
+      if (wf.name) return wf.name;
+      // Fallback search through data
+      const input = wf.data?.workflow?.input;
+      if (input && typeof input === 'string') return input;
+      if (input && typeof input === 'object') return (input as any).objective || wf.workflow_type || "General Automation";
+    }
+
+    return "Untitled Automation";
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-8 animate-in fade-in duration-700">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-        <div>
-          <h2 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-            <Rocket className="w-8 h-8 text-[var(--color-accent-blue)]" />
-            Automations Hub
-          </h2>
-          <p className="text-white/40 font-medium max-w-xl">
-            Monitor live instances, view execution logs, and manage your deployed workflow blueprints.
-          </p>
+      {/* Header section standardized */}
+      <div className="mb-10 flex flex-col gap-6">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-black text-white tracking-tight mb-2">Automations Hub</h1>
+            <p className="text-white/40 font-medium">Monitor live instances, view execution logs, and manage your deployments.</p>
+          </div>
+          <div className="flex flex-row items-center gap-8">
+            <div className="flex flex-col items-end">
+              <span className="text-white/20 uppercase tracking-widest text-[10px] font-black">Active Nodes</span>
+              <span className="text-2xl font-black text-white leading-none">
+                {instances.reduce((acc, i) => acc + (i.logs?.filter((l: any) => l.status === 'success').length || 0), 0)}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowDeployModal(true)}
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/90 text-white font-black text-sm shadow-[0_8px_32px_rgba(59,130,246,0.3)] transition-all active:scale-95"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              DEPLOY NEW
+            </button>
+          </div>
         </div>
-
-        <button
-          onClick={() => setShowDeployModal(true)}
-          className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/90 text-white font-bold text-sm shadow-[0_8px_32px_rgba(59,130,246,0.3)] transition-all active:scale-95"
-        >
-          <Play className="w-4 h-4 fill-current" />
-          Deploy New Instance
-        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -317,7 +338,7 @@ export function AutomationsView() {
                         </div>
                         <div>
                           <h4 className="font-bold text-white flex items-center gap-2">
-                            {inst.workflow_name}
+                            {getWorkflowTitle(inst)}
                             <span className="text-[10px] text-white/20 font-mono">#{inst.id.slice(0, 8)}</span>
                           </h4>
                           <div className="flex items-center gap-3 mt-1">
