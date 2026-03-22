@@ -246,29 +246,32 @@ export class AutomationRunner {
       // Standard path traversal
       const parts = path.trim().replace(/^\$/, '').split('.');
       let current: any = context;
-
+      
       // If the first part is a known root ($trigger, $input, $ai), start there
       const firstPart = parts[0];
       if (context[`$${firstPart}`]) {
         current = context[`$${firstPart}`];
         parts.shift();
+      } else if (context[firstPart]) {
+        // Handle cases where the key might not have a leading $ in user blueprint
+        current = context[firstPart];
+        parts.shift();
       }
 
       for (const part of parts) {
         if (!current) return undefined;
-
-        // Try direct match
+        
         let next = current[part];
-
+        
         // Fuzzy match: if direct fails, try snake_case vs camelCase
         if (next === undefined) {
           const keys = Object.keys(current);
-          const fuzzyMatch = keys.find(k =>
+          const fuzzyMatch = keys.find(k => 
             k.replace(/_/g, '').toLowerCase() === part.replace(/_/g, '').toLowerCase()
           );
           if (fuzzyMatch) next = current[fuzzyMatch];
         }
-
+        
         current = next;
       }
       return current;
@@ -276,8 +279,11 @@ export class AutomationRunner {
 
     const matchString = (str: string) => `{{${str}}}`;
 
+    console.log(`[Hydrator] Context Keys: ${Object.keys(context).join(', ')}`);
+
     return text.replace(/\{\{(.+?)\}\}/g, (match, path) => {
       const result = getValue(path.trim());
+      console.log(`[Hydrator] Path: ${path.trim()} -> Result: ${typeof result === 'string' ? result.substring(0, 30) + '...' : (result ? '[Object]' : 'UNDEFINED')}`);
       if (result === undefined || result === null) return match;
       return typeof result === 'object' ? JSON.stringify(result) : String(result);
     });
