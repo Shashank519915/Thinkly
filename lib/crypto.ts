@@ -53,3 +53,24 @@ export function decrypt(encryptedText: string): string {
 
   return decrypted
 }
+
+/**
+ * Decrypts a stored secret and intelligently extracts the active token.
+ * Handles both legacy raw strings and the modern JSON token objects.
+ */
+export function getSecretToken(encryptedSecret: string): string {
+  try {
+    const decrypted = decrypt(encryptedSecret)
+    
+    // Check if it's a JSON object (OAuth or Manual Sync)
+    if (decrypted.trim().startsWith('{')) {
+      const data = JSON.parse(decrypted)
+      return data.access_token || data.api_key || decrypted
+    }
+    
+    return decrypted
+  } catch (err) {
+    console.error("Token extraction failed:", err)
+    return ""
+  }
+}

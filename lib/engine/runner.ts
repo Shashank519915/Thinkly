@@ -5,7 +5,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-import { decrypt } from '@/lib/crypto';
+import { decrypt, getSecretToken } from '@/lib/crypto';
 
 export interface RunLog {
   nodeId: string;
@@ -49,7 +49,7 @@ export class AutomationRunner {
 
     data.forEach(integration => {
       try {
-        const decryptedValue = decrypt(integration.encrypted_secret);
+        const decryptedValue = getSecretToken(integration.encrypted_secret);
         this.integrations[integration.service_name] = decryptedValue;
       } catch (e) {
         console.error(`Failed to decrypt integration for ${integration.service_name}:`, e);
