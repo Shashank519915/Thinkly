@@ -286,14 +286,15 @@ export class AutomationRunner {
   private async runAINode(node: WorkflowNode, prompt: string): Promise<any> {
     // SWITCH: Using Gemini API (v1.5 Flash) due to OpenAI quota limits
     const geminiKey = process.env.GEMINI_API_KEY_2 || process.env.GEMINI_API_KEY;
-
     if (!geminiKey) throw new Error("GEMINI_API_KEY_2 not found in environment. Please add it to Vercel/local env.");
 
     // Safely strip HTML out of raw emails to aggressively conserve tokens.
     const cleanPrompt = prompt.replace(/<[^>]*>?/gm, '').substring(0, 8000);
     const systemInstruction = "You are an automated extraction engine. Always output ONLY raw JSON formatted exactly as requested. Do not wrap in markdown tags like ```json.";
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+    console.log(`[AI Node] Prompt Sent to Gemini: ${cleanPrompt.substring(0, 200)}...`);
+
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -301,7 +302,7 @@ export class AutomationRunner {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `${systemInstruction}\n\nUser Request: ${cleanPrompt}`
+            text: `${systemInstruction}\n\nEmail Text to analyze:\n${cleanPrompt}`
           }]
         }],
         generationConfig: {
