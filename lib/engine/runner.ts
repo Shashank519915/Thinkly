@@ -187,84 +187,99 @@ export class AutomationRunner {
       $input: {}
     };
 
-    // 1. Fill logs context and setup smart AI aliasing
+    // 1. Fill logs context
     let lastAiOutput: any = null;
-
     this.logs.forEach(l => {
       if (l.status === 'success' && l.output) {
         context[l.nodeId] = l.output;
-
-        // Auto-detect AI outputs to build alias connections
         if (l.output.jsonOutput && !lastAiOutput) {
           lastAiOutput = l.output;
         }
       }
     });
 
-    // 2. Map static aliases like `$ai_extract_data_1` inside user-provided blueprints
-    // to the dynamically generated AI node's actual run output cache automatically.
     if (lastAiOutput) {
       context['$ai_extract_data_1'] = lastAiOutput;
       context['$ai'] = lastAiOutput;
     }
 
-    // 2. Fetch from DB if available (we pre-filled it in run)
-    const firstNode = this.nodes[0];
-    if (firstNode && context[firstNode.id]) {
-      context['$trigger'] = context[firstNode.id];
-    }
-    // Mix in input_data from the first node if we injected it, but it's cleaner to fetch from DB.
-    // We already have it in this.run, let's pass it up or make it class properties.
+    // 2. Setup trigger/input aliases
     if (this._triggerData) {
-      context['$trigger'] = { ...context['$trigger'], ...this._triggerData };
-
-      // Auto-Parse traditional standard FROM addresses for deeper templating (e.g., $trigger.from.name)
-      if (typeof context['$trigger'].from === 'string') {
-        const fromStr = context['$trigger'].from;
-        const match = fromStr.match(/(.*?)<(.*?)>/);
+      context['$trigger'] = { ...this._triggerData };
+      
+      // Auto-Parse traditional standard FROM addresses
+      const fromVal = context['$trigger'].from;
+      if (typeof fromVal === 'string') {
+        const match = fromVal.match(/(.*?)<(.*?)>/);
         if (match) {
-          context['$trigger'].from = {
-            name: match[1].replace(/"/g, '').trim(),
-            email: match[2].trim(),
-            raw: fromStr
+          context['$trigger'].from = { 
+            name: match[1].replace(/"/g, '').trim(), 
+            email: match[2].trim(), 
+            raw: fromVal 
           };
         } else {
-          // Fallback if no angle brackets
-          context['$trigger'].from = { name: fromStr.split('@')[0], email: fromStr, raw: fromStr };
+          context['$trigger'].from = { name: fromVal.split('@')[0], email: fromVal, raw: fromVal };
         }
       }
     }
     if (this._inputData) {
-      context['$input'] = { ...context['$input'], ...this._inputData };
+      context['$input'] = { ...this._inputData };
     }
 
-    return text.replace(/\{\{(.+?)\}\}/g, (match, path) => {
-      // Handle conditional expressions like {{ $error ? ... : ... }}
-      // For simplicity, if it contains a `?`, evaluate it securely or fallback.
-      // E.g., {{ $error ? 'Failure' : 'Success' }}
-      if (path.includes('?')) {
-        try {
-          const evalFunc = new Function('$error', '$trigger', '$input', `return ${path.trim()}`);
-          const result = evalFunc(context['$error'], context['$trigger'], context['$input']);
-          return String(result);
-        } catch (e) { /* ignore simple eval errors */ }
+    // 3. Robust Resolver Helper
+    const getValue = (path: string): any => {
+      // Handle fallback logic (||)
+      if (path.includes('||')) {
+        const options = path.split('||');
+        for (const opt of options) {
+          const res = getValue(opt.trim());
+          if (res !== undefined && res !== null && res !== "" && res !== matchString(opt.trim())) return res;
+        }
+        return undefined;
       }
 
-      const parts = path.trim().replace(/^\$/, '$').split('.');
-      let val: any = context;
+      // Handle literals (e.g. 'there')
+      if ((path.startsWith("'") && path.endsWith("'")) || (path.startsWith('"') && path.endsWith('"'))) {
+        return path.slice(1, -1);
+      }
+
+      // Standard path traversal
+      const parts = path.trim().replace(/^\$/, '').split('.');
+      let current: any = context;
+      
+      // If the first part is a known root ($trigger, $input, $ai), start there
+      const firstPart = parts[0];
+      if (context[`$${firstPart}`]) {
+         current = context[`$${firstPart}`];
+         parts.shift();
+      }
+
       for (const part of parts) {
-        val = val?.[part];
-      }
-      if (val === undefined) {
-        // Try fallback to check if node direct name exists
-        const root = path.trim().split('.')[0].replace(/^\$/, '');
-        if (context[root]) {
-          let altVal: any = context;
-          for (const p of path.trim().replace(/^\$/, '').split('.')) altVal = altVal?.[p];
-          if (altVal !== undefined) val = altVal;
+        if (!current) return undefined;
+        
+        // Try direct match
+        let next = current[part];
+        
+        // Fuzzy match: if direct fails, try snake_case vs camelCase
+        if (next === undefined) {
+           const keys = Object.keys(current);
+           const fuzzyMatch = keys.find(k => 
+             k.replace(/_/g, '').toLowerCase() === part.replace(/_/g, '').toLowerCase()
+           );
+           if (fuzzyMatch) next = current[fuzzyMatch];
         }
+        
+        current = next;
       }
-      return val !== undefined ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : match;
+      return current;
+    };
+
+    const matchString = (str: string) => `{{${str}}}`;
+
+    return text.replace(/\{\{(.+?)\}\}/g, (match, path) => {
+      const result = getValue(path.trim());
+      if (result === undefined || result === null) return match;
+      return typeof result === 'object' ? JSON.stringify(result) : String(result);
     });
   }
 
