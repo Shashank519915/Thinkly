@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Sidebar } from "@/components/layout/Sidebar";
 import { FilmGrain } from "@/components/ui/FilmGrain";
 import { LiquidGlassFilter } from "@/components/ui/LiquidGlassFilter";
 
