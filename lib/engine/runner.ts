@@ -26,7 +26,7 @@ export class AutomationRunner {
   private edges: WorkflowEdge[];
   private logs: RunLog[] = [];
   private integrations: Record<string, string> = {};
-  
+
   // Public for access within class logic
   private _triggerData: any = {};
   private _inputData: any = {};
@@ -60,8 +60,8 @@ export class AutomationRunner {
   private async updateStatus(status: string, currentStep?: string) {
     await supabase
       .from('automation_instances')
-      .update({ 
-        status, 
+      .update({
+        status,
         logs: this.logs,
         current_step_id: currentStep,
         updated_at: new Date().toISOString()
@@ -84,7 +84,7 @@ export class AutomationRunner {
         .select('trigger_data, input_data')
         .eq('id', this.instanceId)
         .single();
-      
+
       const triggerData = (instanceData as any)?.trigger_data || {};
       const inputData = (instanceData as any)?.input_data || {};
       this._triggerData = triggerData;
@@ -119,7 +119,7 @@ export class AutomationRunner {
         const log = this.logs.find(l => l.nodeId === node.id)!;
         log.status = 'running';
         log.startedAt = new Date().toISOString();
-        
+
         // Granular update to DB
         await this.updateStatus('running', node.id);
 
@@ -148,9 +148,9 @@ export class AutomationRunner {
 
   private async executeNode(node: WorkflowNode): Promise<any> {
     const hydratedPrompt = this.resolveTemplates(node.description || "");
-    
+
     console.log(`Executing node: ${node.label} (${node.tool})`);
-    
+
     const tool = node.tool?.toLowerCase();
 
     if (tool === 'openai' || tool === 'ai' || tool?.includes('gemini')) {
@@ -193,10 +193,10 @@ export class AutomationRunner {
     this.logs.forEach(l => {
       if (l.status === 'success' && l.output) {
         context[l.nodeId] = l.output;
-        
+
         // Auto-detect AI outputs to build alias connections
         if (l.output.jsonOutput && !lastAiOutput) {
-           lastAiOutput = l.output;
+          lastAiOutput = l.output;
         }
       }
     });
@@ -217,16 +217,16 @@ export class AutomationRunner {
     // We already have it in this.run, let's pass it up or make it class properties.
     if (this._triggerData) {
       context['$trigger'] = { ...context['$trigger'], ...this._triggerData };
-      
+
       // Auto-Parse traditional standard FROM addresses for deeper templating (e.g., $trigger.from.name)
       if (typeof context['$trigger'].from === 'string') {
         const fromStr = context['$trigger'].from;
         const match = fromStr.match(/(.*?)<(.*?)>/);
         if (match) {
-          context['$trigger'].from = { 
-            name: match[1].replace(/"/g, '').trim(), 
-            email: match[2].trim(), 
-            raw: fromStr 
+          context['$trigger'].from = {
+            name: match[1].replace(/"/g, '').trim(),
+            email: match[2].trim(),
+            raw: fromStr
           };
         } else {
           // Fallback if no angle brackets
@@ -244,10 +244,10 @@ export class AutomationRunner {
       // E.g., {{ $error ? 'Failure' : 'Success' }}
       if (path.includes('?')) {
         try {
-           const evalFunc = new Function('$error', '$trigger', '$input', `return ${path.trim()}`);
-           const result = evalFunc(context['$error'], context['$trigger'], context['$input']);
-           return String(result);
-        } catch(e) { /* ignore simple eval errors */ }
+          const evalFunc = new Function('$error', '$trigger', '$input', `return ${path.trim()}`);
+          const result = evalFunc(context['$error'], context['$trigger'], context['$input']);
+          return String(result);
+        } catch (e) { /* ignore simple eval errors */ }
       }
 
       const parts = path.trim().replace(/^\$/, '$').split('.');
@@ -259,9 +259,9 @@ export class AutomationRunner {
         // Try fallback to check if node direct name exists
         const root = path.trim().split('.')[0].replace(/^\$/, '');
         if (context[root]) {
-           let altVal: any = context;
-           for(const p of path.trim().replace(/^\$/, '').split('.')) altVal = altVal?.[p];
-           if (altVal !== undefined) val = altVal;
+          let altVal: any = context;
+          for (const p of path.trim().replace(/^\$/, '').split('.')) altVal = altVal?.[p];
+          if (altVal !== undefined) val = altVal;
         }
       }
       return val !== undefined ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : match;
@@ -271,14 +271,14 @@ export class AutomationRunner {
   private async runAINode(node: WorkflowNode, prompt: string): Promise<any> {
     // SWITCH: Using Gemini API (v1.5 Flash) due to OpenAI quota limits
     const geminiKey = process.env.GEMINI_API_KEY_2 || process.env.GEMINI_API_KEY;
-    
+
     if (!geminiKey) throw new Error("GEMINI_API_KEY_2 not found in environment. Please add it to Vercel/local env.");
 
     // Safely strip HTML out of raw emails to aggressively conserve tokens.
-    const cleanPrompt = prompt.replace(/<[^>]*>?/gm, '').substring(0, 8000); 
+    const cleanPrompt = prompt.replace(/<[^>]*>?/gm, '').substring(0, 8000);
     const systemInstruction = "You are an automated extraction engine. Always output ONLY raw JSON formatted exactly as requested. Do not wrap in markdown tags like ```json.";
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -306,7 +306,7 @@ export class AutomationRunner {
 
     const result = await res.json();
     const textMsg = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    
+
     let jsonOutput = null;
     try {
       // Gemini Flash with responseMimeType usually returns clean JSON
@@ -319,7 +319,7 @@ export class AutomationRunner {
         const str = jsonMatch ? jsonMatch[1] : textMsg;
         jsonOutput = JSON.parse(str.trim());
       }
-    } catch(e) {
+    } catch (e) {
       console.error("JSON Parse Error in AI Node:", e);
     }
 
@@ -329,21 +329,21 @@ export class AutomationRunner {
   private async runSheetsNode(node: WorkflowNode, input: string): Promise<any> {
     const token = this.integrations['google'];
     if (!token) throw new Error("Google integration not found. Please connect it in the Integrations tab.");
-    
+
     const config = this.resolveObject((node as any).config || {});
     const apiEndpoint = this.resolveTemplates((node as any).apiEndpoint || "");
-    
+
     // Parse the endpoint: POST /spreadsheets/v4/{spreadsheetId}/sheets/{sheetName}/rows
     // Or just extract the spreadsheetId and sheetName
     let spreadsheetId = config.spreadsheetId || this._inputData?.spreadsheetId;
     let sheetName = config.sheetName || this._inputData?.sheetName || 'Sheet1';
-    
+
     if (apiEndpoint) {
-       const match = apiEndpoint.match(/spreadsheets\/([^/]+)\/sheets\/([^/]+)/);
-       if (match) {
-           spreadsheetId = match[1];
-           sheetName = match[2];
-       }
+      const match = apiEndpoint.match(/spreadsheets\/([^/]+)\/sheets\/([^/]+)/);
+      if (match) {
+        spreadsheetId = match[1];
+        sheetName = match[2];
+      }
     }
 
     if (!spreadsheetId) throw new Error("Missing spreadsheetId for Google Sheets node.");
@@ -361,8 +361,8 @@ export class AutomationRunner {
     });
 
     if (!res.ok) {
-       const err = await res.json();
-       throw new Error(`Google Sheets API Error: ${err.error?.message || res.statusText}`);
+      const err = await res.json();
+      throw new Error(`Google Sheets API Error: ${err.error?.message || res.statusText}`);
     }
 
     const data = await res.json();
@@ -372,13 +372,13 @@ export class AutomationRunner {
   private async runGmailNode(node: WorkflowNode, input: string): Promise<any> {
     const token = this.integrations['google'];
     if (!token) throw new Error("Google integration not found (needed for Gmail).");
-    
+
     const config = this.resolveObject((node as any).config || {});
     const to = config.to || this._inputData?.to;
     const subject = config.subject || this._inputData?.subject || "No Subject";
     const body = config.body || this._inputData?.body || input;
     const threadId = config.threadId || this._inputData?.threadId; // Optional
-    
+
     if (!to) throw new Error("Missing 'to' address for Gmail node.");
 
     // Construct raw email RFC 2822 format
@@ -407,8 +407,8 @@ export class AutomationRunner {
     });
 
     if (!res.ok) {
-       const err = await res.json();
-       throw new Error(`Gmail API Error: ${err.error?.message || res.statusText}`);
+      const err = await res.json();
+      throw new Error(`Gmail API Error: ${err.error?.message || res.statusText}`);
     }
 
     const data = await res.json();
