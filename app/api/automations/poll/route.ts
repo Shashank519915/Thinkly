@@ -119,11 +119,15 @@ export async function POST(req: NextRequest) {
 
     // 5. Fire runner
     const runner = new AutomationRunner(instanceId, userId, nodes, edges);
-    runner.run().catch(err => console.error("Poll Trigger Runner Error:", err));
+    try {
+      await runner.run();
+    } catch (err) {
+      console.error("Poll Trigger Runner Error:", err);
+    }
 
     return NextResponse.json({ 
       triggered: true, 
-      message: "Email found and automation started",
+      message: "Email found and automation completed",
       subject: subject
     });
 

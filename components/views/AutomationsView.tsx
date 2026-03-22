@@ -334,13 +334,13 @@ export function AutomationsView() {
                       </div>
 
                       <div className="flex items-center gap-4">
-                        {(inst.status === 'listening' || inst.status === 'paused' || inst.status === 'success' || inst.status === 'failed') && (
+                        {(inst.status === 'listening' || inst.status === 'paused' || inst.status === 'success' || inst.status === 'failed' || inst.status === 'running') && (
                           <button
                             onClick={(e) => { e.stopPropagation(); toggleInstanceStatus(inst.id, inst.status); }}
                             className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors z-10"
-                            title={inst.status === 'listening' ? 'Pause Listener' : 'Start Listening'}
+                            title={inst.status === 'listening' || inst.status === 'running' ? 'Pause Listener' : 'Start Listening'}
                           >
-                            {inst.status === 'listening' ? (
+                            {inst.status === 'listening' || inst.status === 'running' ? (
                               <PauseCircle className="w-5 h-5 text-amber-400" />
                             ) : (
                               <PlayCircle className="w-5 h-5 text-emerald-400" />
