@@ -206,16 +206,16 @@ export class AutomationRunner {
     // 2. Setup trigger/input aliases
     if (this._triggerData) {
       context['$trigger'] = { ...this._triggerData };
-      
+
       // Auto-Parse traditional standard FROM addresses
       const fromVal = context['$trigger'].from;
       if (typeof fromVal === 'string') {
         const match = fromVal.match(/(.*?)<(.*?)>/);
         if (match) {
-          context['$trigger'].from = { 
-            name: match[1].replace(/"/g, '').trim(), 
-            email: match[2].trim(), 
-            raw: fromVal 
+          context['$trigger'].from = {
+            name: match[1].replace(/"/g, '').trim(),
+            email: match[2].trim(),
+            raw: fromVal
           };
         } else {
           context['$trigger'].from = { name: fromVal.split('@')[0], email: fromVal, raw: fromVal };
@@ -246,29 +246,29 @@ export class AutomationRunner {
       // Standard path traversal
       const parts = path.trim().replace(/^\$/, '').split('.');
       let current: any = context;
-      
+
       // If the first part is a known root ($trigger, $input, $ai), start there
       const firstPart = parts[0];
       if (context[`$${firstPart}`]) {
-         current = context[`$${firstPart}`];
-         parts.shift();
+        current = context[`$${firstPart}`];
+        parts.shift();
       }
 
       for (const part of parts) {
         if (!current) return undefined;
-        
+
         // Try direct match
         let next = current[part];
-        
+
         // Fuzzy match: if direct fails, try snake_case vs camelCase
         if (next === undefined) {
-           const keys = Object.keys(current);
-           const fuzzyMatch = keys.find(k => 
-             k.replace(/_/g, '').toLowerCase() === part.replace(/_/g, '').toLowerCase()
-           );
-           if (fuzzyMatch) next = current[fuzzyMatch];
+          const keys = Object.keys(current);
+          const fuzzyMatch = keys.find(k =>
+            k.replace(/_/g, '').toLowerCase() === part.replace(/_/g, '').toLowerCase()
+          );
+          if (fuzzyMatch) next = current[fuzzyMatch];
         }
-        
+
         current = next;
       }
       return current;
@@ -294,7 +294,7 @@ export class AutomationRunner {
 
     console.log(`[AI Node] Prompt Sent to Gemini: ${cleanPrompt.substring(0, 200)}...`);
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
