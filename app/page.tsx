@@ -252,7 +252,7 @@ export default function Home() {
     setMeta({
       title: wf.data.workflow_type ?? "Saved Workflow",
       prompt: wf.prompt,
-      generatedAt: wf.date,
+      generatedAt: wf.created_at,
       source: "saved",
       isOwner: true
     })

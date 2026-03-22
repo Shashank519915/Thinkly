@@ -1,36 +1,77 @@
 import { useState, useEffect } from "react"
 import { WorkflowResponse } from "@/types/workflow"
-import { Clock, ExternalLink, Trash2, Layers, Cpu, Box } from "lucide-react"
+import { Clock, ExternalLink, Trash2, Layers, Cpu, Box, RefreshCw } from "lucide-react"
+import { supabase } from "@/lib/supabase/client"
 
 export interface SavedWorkflow {
-  id: number;
+  id: string | number;
   prompt: string;
   data: WorkflowResponse;
-  date: string;
+  created_at: string;
+  name?: string;
+  workflow_type?: string;
 }
 
 export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkflow) => void }) {
   const [workflows, setWorkflows] = useState<SavedWorkflow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
 
   useEffect(() => {
-    const saved = localStorage.getItem("thinkly_history")
-    if (saved) {
-      const parsed = JSON.parse(saved) as SavedWorkflow[]
-      // Sort by ID (timestamp) descending
-      setWorkflows(parsed.sort((a, b) => b.id - a.id))
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+        fetchWorkflows(user.id)
+      } else {
+        setLoading(false)
+      }
     }
+    checkUser()
   }, [])
 
-  const handleDelete = (id: number, e: React.MouseEvent) => {
+  const fetchWorkflows = async (uid: string) => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('workflows')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      if (data) setWorkflows(data as any)
+    } catch (err) {
+      console.error("Fetch workflows error:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (id: string | number, e: React.MouseEvent) => {
     e.stopPropagation()
-    const updated = workflows.filter(w => w.id !== id)
-    setWorkflows(updated)
-    localStorage.setItem("thinkly_history", JSON.stringify(updated))
+    if (!userId) return
+
+    try {
+      const { error } = await supabase
+        .from('workflows')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId)
+
+      if (error) throw error
+      setWorkflows(prev => prev.filter(w => w.id !== id))
+    } catch (err) {
+      console.error("Delete workflow error:", err)
+    }
   }
 
   // Helper to safely extract a displayable title from a workflow
   const getWorkflowTitle = (wf: SavedWorkflow): string => {
-    const input = wf.data.workflow?.input;
+    if (wf.name) return wf.name;
+    
+    // Fallback search through data
+    const input = wf.data?.workflow?.input;
     if (input && typeof input === 'string') return input;
     if (input && typeof input === 'object') return (input as any).objective || JSON.stringify(input).slice(0, 50);
     
@@ -85,7 +126,12 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
         </div>
       </div>
 
-      {workflows.length === 0 ? (
+      {loading ? (
+        <div className="py-20 flex flex-col items-center justify-center text-white/20">
+          <RefreshCw className="w-8 h-8 animate-spin mb-4" />
+          <span className="text-sm font-medium">Fetching your blueprints...</span>
+        </div>
+      ) : workflows.length === 0 ? (
         <div className="glass-panel p-20 text-center flex flex-col items-center justify-center bg-black/20 backdrop-blur-xl border border-white/5 rounded-3xl">
           <Box className="w-16 h-16 text-white/10 mb-6" />
           <p className="text-white/40 font-medium text-lg">No workflows saved yet.</p>
@@ -96,7 +142,7 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
           {workflows.map(wf => {
             const nodeCount = wf.data.nodes?.length || 0;
             const tools = getToolIcons(wf.data);
-            const dateStr = new Date(wf.date).toLocaleDateString(undefined, { 
+            const dateStr = new Date(wf.created_at).toLocaleDateString(undefined, { 
               month: 'short', 
               day: 'numeric' 
             });
