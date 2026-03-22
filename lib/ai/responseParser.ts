@@ -2,10 +2,18 @@ import { WorkflowResponse } from "@/types/workflow";
 
 export function parseResponse(rawText: string): WorkflowResponse {
   try {
-    // Statically extract the core JSON object bounded by brackets, immune to conversational fluff
-    const match = rawText.match(/\{[\s\S]*\}/);
+    // 1. Strip markdown code fences first if present
+    let text = rawText.replace(/```json|```/g, "").trim();
+
+    // 2. Identify and fix common AI syntax hallucinations (Javascript-style string concatenation in JSON)
+    // This finds patterns like "part 1" + "part 2" (even with newlines) and merges them.
+    text = text.replace(/"\s*\+\s*(\n\s*)?"/g, "");
+    
+    // 3. Statically extract the core JSON object bounded by brackets
+    const match = text.match(/\{[\s\S]*\}/);
     if (!match) throw new Error("Could not locate JSON structural bounds.");
     const cleanText = match[0].trim();
+    
     const parsed = JSON.parse(cleanText) as WorkflowResponse;
     
     // Basic validation to ensure fields exist
