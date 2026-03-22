@@ -269,45 +269,59 @@ export class AutomationRunner {
   }
 
   private async runAINode(node: WorkflowNode, prompt: string): Promise<any> {
-    const apiKey = this.integrations['openai'];
-    if (!apiKey) throw new Error("OpenAI integration not found. Please connect it in the Integrations tab.");
+    // SWITCH: Using Gemini API (v1.5 Flash) due to OpenAI quota limits
+    const geminiKey = process.env.GEMINI_API_KEY_2 || process.env.GEMINI_API_KEY;
+    
+    if (!geminiKey) throw new Error("GEMINI_API_KEY_2 not found in environment. Please add it to Vercel/local env.");
 
     // Safely strip HTML out of raw emails to aggressively conserve tokens.
-    const cleanPrompt = prompt.replace(/<[^>]*>?/gm, '').substring(0, 8000); // Strict length limit for Free Tiers
+    const cleanPrompt = prompt.replace(/<[^>]*>?/gm, '').substring(0, 8000); 
     const systemInstruction = "You are an automated extraction engine. Always output ONLY raw JSON formatted exactly as requested. Do not wrap in markdown tags like ```json.";
 
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemInstruction },
-          { role: "user", content: cleanPrompt }
-        ],
-        temperature: 0.1
+        contents: [{
+          parts: [{
+            text: `${systemInstruction}\n\nUser Request: ${cleanPrompt}`
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          topP: 0.95,
+          topK: 64,
+          maxOutputTokens: 2048,
+          responseMimeType: "application/json"
+        }
       })
     });
 
     if (!res.ok) {
       const errData = await res.json();
-      throw new Error(`OpenAI Error: ${errData.error?.message || "Unknown error"}`);
+      throw new Error(`Gemini API Error: ${errData.error?.message || "Unknown error"}`);
     }
 
     const result = await res.json();
-    const textMsg = result.choices[0].message.content;
+    const textMsg = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
     
     let jsonOutput = null;
     try {
-      const jsonMatch = textMsg.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      const str = jsonMatch ? jsonMatch[1] : textMsg;
-      if (str.trim().startsWith('{') || str.trim().startsWith('[')) {
+      // Gemini Flash with responseMimeType usually returns clean JSON
+      const trimmed = textMsg.trim();
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        jsonOutput = JSON.parse(trimmed);
+      } else {
+        // Fallback: search for JSON in markdown-wrapped response
+        const jsonMatch = textMsg.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        const str = jsonMatch ? jsonMatch[1] : textMsg;
         jsonOutput = JSON.parse(str.trim());
       }
-    } catch(e) {}
+    } catch(e) {
+      console.error("JSON Parse Error in AI Node:", e);
+    }
 
     return { text: textMsg, jsonOutput };
   }
