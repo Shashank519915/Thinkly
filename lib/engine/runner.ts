@@ -228,12 +228,25 @@ export class AutomationRunner {
 
     // 3. Robust Resolver Helper
     const getValue = (path: string): any => {
+      // Handle conditional expressions like {{ $error ? ... : ... }}
+      // If it contains a `?`, evaluate it as a JS expression against the context.
+      if (path.includes('?')) {
+        try {
+          const evalFunc = new Function('$error', '$trigger', '$ai', '$input', `return ${path.trim()}`);
+          return evalFunc(context['$error'], context['$trigger'], context['$ai'], context['$input']);
+        } catch (e) {
+          console.error("[Hydrator] Expression Eval Error:", e);
+          // Fallback to standard logic if eval fails
+        }
+      }
+
       // Handle fallback logic (||)
       if (path.includes('||')) {
         const options = path.split('||');
         for (const opt of options) {
           const res = getValue(opt.trim());
-          if (res !== undefined && res !== null && res !== "" && res !== matchString(opt.trim())) return res;
+          const isFalsyStr = typeof res === 'string' && (res.toLowerCase() === 'unknown' || res.toLowerCase() === 'n/a');
+          if (res !== undefined && res !== null && res !== "" && !isFalsyStr && res !== matchString(opt.trim())) return res;
         }
         return undefined;
       }

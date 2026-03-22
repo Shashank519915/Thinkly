@@ -73,10 +73,13 @@ export async function POST(req: NextRequest) {
     let subject = "No Subject";
     let messageIdHeader = "";
     let date = "";
+    let fromHeader = "";
     msgFull.payload?.headers?.forEach((h: any) => {
-      if (h.name.toLowerCase() === 'subject') subject = h.value;
-      if (h.name.toLowerCase() === 'message-id') messageIdHeader = h.value;
-      if (h.name.toLowerCase() === 'date') date = h.value;
+      const name = h.name.toLowerCase();
+      if (name === 'subject') subject = h.value;
+      if (name === 'message-id') messageIdHeader = h.value;
+      if (name === 'date') date = h.value;
+      if (name === 'from') fromHeader = h.value;
     });
 
     // Extract body
@@ -93,7 +96,7 @@ export async function POST(req: NextRequest) {
     const payload = {
       body: { plainText: bodyText },
       receivedDate: date,
-      from: { email: fromAddr || 'unknown@example.com', name: 'Unknown' },
+      from: fromHeader || fromAddr || 'unknown@example.com',
       subject: subject,
       threadId: threadId,
       headers: { "Message-ID": messageIdHeader }
