@@ -5,6 +5,7 @@
 [![GitHub Repo](https://img.shields.io/badge/GitHub-View_Source-181717?logo=github&style=for-the-badge)](https://github.com/Shashank519915/Thinkly)
 
 *P.S.: I used my Gemini API key and for google(Gmail + Sheet) integration for automation, I used my gmail OAuth 2.0 Playground y29 accesstoken, as this app is currently not verified on OAuth, hence i would have to add every email in test email. So, the flow is for integrations of goole products, put the latest y29 accesstoken, as it also gets expired every 1 hour so you have to refresh it.*
+
 *P.S.: This does not affect Google login on main page for current user, as that is powered by Supabase's Google OAuth Sign-in Provider. That segment works seamlessly, saving user data.*
 
 ---
@@ -104,8 +105,12 @@ For a true production environment, I propose a transition to a **Headless Worker
 ## How I Built This (AI Pair Programming)
 I utilized **Antigravity** and **Google Stitch** as my high-speed engineering partners.
 
-- **Prompting Mastery**: I used **Negative Prompting** to prevent the AI from defaulting to "lazy" solutions (e.g., "NEVER use client-side polling for Google Sheets changes—use the event-driven trigger node instead").
-- **Manual Refinement**: Every 10th line of code was manually touched or refactored by me to ensure architectural purity. I fixed numerous edge cases in the Supabase Auth flow and the template hydration logic that the AI would have otherwise missed.
+- **Prompting Mastery (Role-Based & Negative Steering)**:
+  - **In-App Logic**: I architected the `promptBuilder.ts` to enforce a "Senior Workflow Architect" persona on Gemini, using **Negative Prompting** to strictly forbid generic, non-agentic patterns (e.g., "NEVER use polling—always use event-driven triggers"). Well defined response format expectaions were provided in prompts like required response should be in a very specific strict JSON format.
+  - **Development Strategy**: When directing **Antigravity**, I didn't just ask for features; I provided **Rich Architectural Context** and used **Role Explanation** to ensure the code followed production-grade principles. By using specific exclusion rules, I steered the AI away from "lazy" solutions and towards the sophisticated JSON-patching and vault-encryption models we adopted.
+- **Manual Refinement & Edge-Case Hardening**:
+  - While AI generated initial structures, I conducted **Rigorous Manual Testing** on the local dev server. This phase was essential for identifying and fixing subtle edge cases that static AI analysis often misses—such as the specialized regex for handling Gemini's JSON hallucinations and refining the OAuth token refresh lifecycle.
+  - Majority of code was personally reviewed and refactored to maintain absolute architectural purity and system reliability.
 
 ---
 
