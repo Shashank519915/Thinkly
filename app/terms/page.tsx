@@ -3,20 +3,16 @@ import Link from "next/link"
 
 export default function TermsOfService() {
   return (
-    <main className="max-w-4xl mx-auto px-6 py-16 animate-in fade-in duration-700">
+    <div className="w-full h-screen overflow-y-auto relative z-10 pt-4 pb-24">
+      <main className="max-w-4xl mx-auto px-6 py-16 animate-in fade-in duration-700">
       <Link href="/" className="inline-flex items-center gap-2 text-white/40 hover:text-white mb-8 transition-colors text-xs font-bold uppercase tracking-widest">
         <ArrowLeft className="w-4 h-4" />
         Back to App
       </Link>
       
-      <div className="flex items-center gap-3 mb-10">
-        <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-          <LayoutTemplate className="w-6 h-6 text-purple-400" />
-        </div>
-        <div>
-          <h1 className="text-4xl font-black text-white tracking-tight">Terms of Service</h1>
-          <p className="text-white/40 font-medium mt-1">Last Updated: March 2026</p>
-        </div>
+      <div className="flex flex-col mb-10">
+        <h1 className="text-4xl font-black text-white tracking-tight">Terms of Service</h1>
+        <p className="text-white/40 font-medium mt-1">Last Updated: March 2026</p>
       </div>
 
       <div className="prose prose-invert prose-p:text-white/60 prose-headings:text-white prose-headings:font-bold prose-a:text-[var(--color-accent-blue)] max-w-none space-y-8 glass-panel bg-black/40 backdrop-blur-2xl p-8 md:p-12 border border-white/10 rounded-3xl shadow-2xl relative">
@@ -63,6 +59,7 @@ export default function TermsOfService() {
           <p>We reserve the right to modify these terms at any time. We will notify users of significant changes through the application interface.</p>
         </section>
       </div>
-    </main>
+      </main>
+    </div>
   )
 }
