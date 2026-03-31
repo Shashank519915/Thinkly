@@ -92,8 +92,7 @@ export function RefinementChat({
   }, [messages, expanded])
 
   const handleFocus = () => {
-    // If there is history and user focuses on input, show it
-    if (messages.length > 0 && !expanded) {
+    if (!expanded) {
       setExpanded(true)
     }
   }
@@ -193,7 +192,7 @@ export function RefinementChat({
 
       {/* ── Chat Panel (slides up) ── */}
       <AnimatePresence>
-        {expanded && messages.length > 0 && (
+        {expanded && (
           <motion.div
             key="chat-panel"
             initial={{ opacity: 0, y: 24, scale: 0.97 }}
@@ -206,22 +205,23 @@ export function RefinementChat({
             {/* Absolute Dark Tint Underlay */}
             <div className="absolute inset-0 bg-black/50 -z-10 pointer-events-none" />
             
-            {/* Panel header */}
-            <div className="relative z-10 flex items-center justify-between px-4 py-2.5 border-b border-white/8 flex-shrink-0">
+            {/* Panel header (Clickable to collapse) */}
+            <button 
+              type="button"
+              onClick={() => setExpanded(false)}
+              className="relative z-10 w-full flex items-center justify-between px-4 py-2.5 border-b border-white/8 flex-shrink-0 hover:bg-white/5 transition-colors cursor-pointer text-left group/header"
+            >
               <div className="flex items-center gap-2">
                 <Sparkles className="w-3.5 h-3.5 text-[var(--color-accent-purple)]" />
                 <span className="text-xs font-bold text-white/80 tracking-wide">Workflow Assistant</span>
                 <span className="text-[10px] text-white/30 font-medium">{messages.length} message{messages.length !== 1 ? "s" : ""}</span>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={handleClear} className="p-1 rounded-lg hover:bg-white/8 text-white/30 hover:text-white/60 transition-colors text-[9px] font-bold uppercase tracking-wider px-2">
-                  Clear
-                </button>
-                <button onClick={() => setExpanded(false)} className="p-1 rounded-lg hover:bg-white/8 text-white/40 hover:text-white transition-colors">
+                <div className="p-1 rounded-lg text-white/40 group-hover/header:text-white transition-colors">
                   <ChevronDown className="w-3.5 h-3.5" />
-                </button>
+                </div>
               </div>
-            </div>
+            </button>
 
             {/* Messages */}
             <div 
@@ -359,29 +359,24 @@ export function RefinementChat({
 
       {/* ── Input Bar ── */}
       <form onSubmit={handleSubmit} className="pointer-events-auto w-full relative group z-10">
-        <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-accent-purple)]/30 to-[var(--color-accent-blue)]/30 rounded-full blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity -z-10" />
+        <div className={`absolute inset-0 bg-gradient-to-r from-[var(--color-accent-purple)]/30 to-[var(--color-accent-blue)]/30 rounded-full blur-xl transition-opacity duration-500 -z-10 ${expanded ? 'opacity-100' : 'opacity-0'}`} />
         <div className="glass-panel relative rounded-[2rem] overflow-hidden flex items-center shadow-[0_8px_30px_rgba(0,0,0,0.8)] border border-white/10 group-focus-within:border-[var(--color-accent-purple)]/50 transition-all">
           
           {/* Absolute Dark Tint Underlay */}
           <div className={`absolute inset-0 transition-colors duration-500 -z-10 pointer-events-none ${expanded ? 'bg-black/40' : 'bg-black/[0.25]'}`} />
 
           <div className="relative z-10 flex items-end w-full p-2">
-            {/* Expand/collapse toggle when there are messages */}
-            {messages.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setExpanded(e => !e)}
-                className="ml-3 mr-1 mb-3 text-white/50 hover:text-white/90 transition-colors drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-              >
-                {expanded
-                  ? <ChevronDown className="w-4 h-4" />
-                  : <ChevronUp className="w-4 h-4" />
-                }
-              </button>
-            )}
-            {messages.length === 0 && (
-              <Sparkles className="w-5 h-5 text-[var(--color-accent-purple)] ml-6 mr-2 mb-3 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" />
-            )}
+            {/* Expand/collapse toggle */}
+            <button
+              type="button"
+              onClick={() => setExpanded(e => !e)}
+              className="ml-3 mr-1 mb-3 text-white/50 hover:text-white/90 transition-colors drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+            >
+              {expanded
+                ? <ChevronDown className="w-4 h-4" />
+                : <ChevronUp className="w-4 h-4" />
+              }
+            </button>
             <textarea
               ref={inputRef as any}
               rows={1}
