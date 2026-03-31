@@ -85,8 +85,12 @@ export function RefinementChat({
         container.scrollTop = container.scrollHeight
         isInitialMount.current = false
       } else {
-        // Smooth scroll for subsequent messages
         container.scrollTo({ top: container.scrollHeight, behavior: "smooth" })
+      }
+      
+      // Auto-focus the textarea whenever the panel expands
+      if (inputRef.current) {
+        inputRef.current.focus()
       }
     }
   }, [messages, expanded])
@@ -241,12 +245,12 @@ export function RefinementChat({
 
                   <div className={`max-w-[82%] flex flex-col gap-2 ${msg.role === "user" ? "items-end" : "items-start"}`}>
                     {/* Message bubble */}
-                    <div className={`px-3 py-2 rounded-xl text-xs font-medium leading-relaxed ${
+                    <div className={`px-3 py-2 text-xs font-medium leading-relaxed ${
                       msg.role === "user"
-                        ? "bg-[var(--color-accent-purple)]/20 border border-[var(--color-accent-purple)]/30 text-white/90"
+                        ? "bg-[var(--color-accent-purple)]/30 border border-[var(--color-accent-purple)]/40 text-white rounded-2xl rounded-br-sm"
                         : msg.mode === "patch"
-                          ? "bg-amber-400/8 border border-amber-400/25 text-white/80"
-                          : "bg-white/5 border border-white/8 text-white/75"
+                          ? "bg-amber-400/8 border border-amber-400/25 text-white/80 rounded-2xl rounded-tl-sm"
+                          : "bg-white/5 border border-white/8 text-white/75 rounded-2xl rounded-tl-sm"
                     }`}>
                       {msg.content}
                     </div>
@@ -265,14 +269,16 @@ export function RefinementChat({
                         {msg.patch.operations.length > 0 && (
                           <ul className="text-[10px] text-white/50 font-medium space-y-0.5 pl-1">
                             {msg.patch.operations.slice(0, 4).map((op, i) => (
-                              <li key={i} className="flex items-center gap-1.5">
-                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                              <li key={i} className="flex items-start sm:items-center gap-1.5 overflow-hidden w-full">
+                                <span className={`w-1.5 h-1.5 mt-1 sm:mt-0 rounded-full flex-shrink-0 ${
                                   op.op === "add_node" ? "bg-green-400" :
                                   op.op === "remove_node" ? "bg-red-400" : "bg-amber-400"
                                 }`} />
-                                <span className="font-mono text-[9px]">{op.op.replace("_", " ")}</span>
-                                {"nodeId" in op && <span className="text-white/30">— {op.nodeId}</span>}
-                                {"node" in op && <span className="text-white/30">— {op.node.label}</span>}
+                                <span className="font-mono text-[9px] whitespace-nowrap flex-shrink-0">{op.op.replace("_", " ")}</span>
+                                <span className="text-white/40 truncate flex-1 min-w-0">
+                                  {"nodeId" in op && <>— {op.nodeId}</>}
+                                  {"node" in op && <>— {op.node.label}</>}
+                                </span>
                               </li>
                             ))}
                             {msg.patch.operations.length > 4 && (
@@ -284,22 +290,22 @@ export function RefinementChat({
                           <p className="text-[10px] text-red-400/80">{msg.patch.reason}</p>
                         )}
                         {msg.patch.feasible && (
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
                             {isOwner ? (
                               <button
                                 onClick={() => handleApply(msg.id, msg.patch!)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-400/15 hover:bg-green-400/25 border border-green-400/30 text-green-400 text-[10px] font-bold uppercase tracking-wider transition-colors active:scale-95"
+                                className="flex flex-1 justify-center items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-400/15 hover:bg-green-400/25 border border-green-400/30 text-green-400 text-[10px] font-bold uppercase tracking-wider transition-colors active:scale-95 whitespace-nowrap min-w-max"
                               >
                                 <CheckCircle2 className="w-3 h-3" /> Apply Changes
                               </button>
                             ) : (
                               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/30 text-[9px] font-medium italic">
-                                Preview only (Owner-only action)
+                                Preview only
                               </div>
                             )}
                             <button
                               onClick={() => handleDismiss(msg.id)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/8 border border-white/10 text-white/40 hover:text-white/70 text-[10px] font-bold uppercase tracking-wider transition-colors"
+                              className="flex justify-center items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/8 border border-white/10 text-white/40 hover:text-white/70 text-[10px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap shrink-0"
                             >
                               <X className="w-3 h-3" /> Dismiss
                             </button>
