@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react"
 import { HeroInput } from "@/components/home/HeroInput"
 import { OutputCards } from "@/components/home/OutputCards"
-import { AlertCircle, Wrench, Plus } from "lucide-react"
+import { AlertCircle, Wrench, Plus, RefreshCw } from "lucide-react"
+
 import { motion, AnimatePresence } from "framer-motion"
 import { WorkflowResponse } from "@/types/workflow"
 import dynamic from "next/dynamic"
@@ -37,6 +38,10 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>("Dashboard")
   const [appView, setAppView] = useState<AppView>("home")
   const [user, setUser] = useState<User | null>(null)
+  const [guestId, setGuestId] = useState<string | null>(null)
+  const [showMigrationModal, setShowMigrationModal] = useState(false)
+  const [hasWorkflowsToMigrate, setHasWorkflowsToMigrate] = useState(false)
+
 
   useEffect(() => {
     // Initial Load Timer - Extended for smoother transition and orb init
@@ -49,17 +54,29 @@ export default function Home() {
       setIsAppVisible(true)
     }, 5500)
 
+    // Initialize Guest ID
+    let currentGuestId = localStorage.getItem("thinkly_guest_id")
+    if (!currentGuestId) {
+      currentGuestId = crypto.randomUUID()
+      localStorage.setItem("thinkly_guest_id", currentGuestId)
+    }
+    setGuestId(currentGuestId)
+
     // Get initial user
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
-      if (user) syncLocalToCloud(user.id)
+      if (user) {
+        checkForMigration(user.id, currentGuestId!)
+      }
     })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null
       setUser(u)
-      if (u) syncLocalToCloud(u.id)
+      if (u) {
+        checkForMigration(u.id, currentGuestId!)
+      }
     })
 
     return () => {
@@ -112,39 +129,90 @@ export default function Home() {
     }
   }
 
-  const syncLocalToCloud = async (userId: string) => {
+  const checkForMigration = async (userId: string, guestId: string) => {
     try {
-      const local: any[] = JSON.parse(localStorage.getItem("thinkly_history") || "[]")
-      if (local.length === 0) return
-
-      // Upsert local items to Supabase
-      const toSync = local.map(item => ({
-        user_id: userId,
-        prompt: item.prompt,
-        data: item.data,
-        id_temp: item.id, // reference for local identification
-        created_at: item.date
-      }))
-
-      const { error } = await supabase.from('workflows').upsert(toSync, {
-        onConflict: 'user_id,id_temp'
-      })
-
-      if (error) {
-        console.error("Sync error details:", {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        })
+      const { count, error } = await supabase
+        .from('guest_workflows')
+        .select('*', { count: 'exact', head: true })
+        .eq('guest_id', guestId)
+      
+      if (!error && count && count > 0) {
+        setHasWorkflowsToMigrate(true)
+        setShowMigrationModal(true)
       }
     } catch (err) {
-      console.error("Sync failed catch block:", err)
+      console.error("Migration check failed:", err)
     }
   }
 
+  const handleMigrateWorkflows = async () => {
+    if (!user || !guestId) return
+    setLoading(true)
+    try {
+      // 1. Fetch Guest Workflows
+      const { data: guestWfs, error: fetchWfError } = await supabase
+        .from('guest_workflows')
+        .select('*')
+        .eq('guest_id', guestId)
+      
+      if (fetchWfError) throw fetchWfError
+
+      if (guestWfs && guestWfs.length > 0) {
+        const toInsertWfs = guestWfs.map(wf => ({
+          user_id: user.id,
+          prompt: wf.prompt,
+          data: wf.data,
+          id_temp: wf.id_temp,
+          created_at: wf.created_at
+        }))
+        const { error: insWfError } = await supabase.from('workflows').insert(toInsertWfs)
+        if (insWfError) throw insWfError
+        await supabase.from('guest_workflows').delete().eq('guest_id', guestId)
+      }
+
+      // 2. Fetch Guest Chats
+      const { data: guestChats, error: fetchChatError } = await supabase
+        .from('guest_chats')
+        .select('*')
+        .eq('guest_id', guestId)
+      
+      if (fetchChatError) throw fetchChatError
+
+      if (guestChats && guestChats.length > 0) {
+        const toInsertChats = guestChats.map(gc => ({
+          user_id: user.id,
+          workflow_id: gc.workflow_id,
+          messages: gc.messages,
+          created_at: gc.created_at,
+          updated_at: gc.updated_at
+        }))
+        const { error: insChatError } = await supabase.from('chats').insert(toInsertChats)
+        if (insChatError) throw insChatError
+        await supabase.from('guest_chats').delete().eq('guest_id', guestId)
+      }
+
+      // 3. CLEAN LOCAL STORAGE (Success)
+      localStorage.removeItem("thinkly_history")
+      // Also clear any chat history keys
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith("thinkly_chat_")) {
+          localStorage.removeItem(key)
+        }
+      })
+
+      setHasWorkflowsToMigrate(false)
+      setShowMigrationModal(false)
+      if (activeTab === "My Workflows") handleTabChange("My Workflows")
+    } catch (err: any) {
+      console.error("Migration failed:", err)
+      setError(`Migration failed: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+
   // Track chat history for iterative generation refinement (full re-gen mode)
-  // Note: Q&A chat history is managed inside RefinementChat via localStorage
   const [messages, setMessages] = useState<{ role: string, parts: { text: string }[] }[]>([])
 
   const handleDuplicateWorkflow = async (duplicateData: WorkflowResponse, prompt: string) => {
@@ -160,15 +228,24 @@ export default function Home() {
       isOwner: true
     })
 
-    // 2. Save to local
-    const newEntry = { id, prompt, data: duplicateData, date: now }
-    const existing = JSON.parse(localStorage.getItem("thinkly_history") || "[]")
-    localStorage.setItem("thinkly_history", JSON.stringify([newEntry, ...existing]))
-
-    // 3. Save to Supabase (if logged in)
+    // 2. Save Logic (Split)
     if (user) {
+      // Authenticated -> Supabase only
       await supabase.from('workflows').insert({
         user_id: user.id,
+        prompt: prompt,
+        data: duplicateData,
+        id_temp: id,
+        created_at: now
+      })
+    } else if (guestId) {
+      // Guest -> Local + Supabase Guest Tables
+      const newEntry = { id, prompt, data: duplicateData, date: now }
+      const existing = JSON.parse(localStorage.getItem("thinkly_history") || "[]")
+      localStorage.setItem("thinkly_history", JSON.stringify([newEntry, ...existing]))
+      
+      await supabase.from('guest_workflows').insert({
+        guest_id: guestId,
         prompt: prompt,
         data: duplicateData,
         id_temp: id,
@@ -177,31 +254,38 @@ export default function Home() {
     }
   }
 
+
   const handleApplyPatch = async (patched: WorkflowResponse) => {
     setData(patched)
-    // Update the history entry in-place
     if (meta) {
-      // 1. Local Update
-      try {
-        const existing: any[] = JSON.parse(localStorage.getItem("thinkly_history") || "[]")
-        const updated = existing.map(entry =>
-          entry.date === meta.generatedAt
-            ? { ...entry, data: patched }
-            : entry
-        )
-        localStorage.setItem("thinkly_history", JSON.stringify(updated))
-      } catch { /* ignore */ }
-
-      // 2. Supabase Update (if logged in)
       if (user) {
+        // Authenticated -> Supabase only
         await supabase
           .from('workflows')
           .update({ data: patched, updated_at: new Date().toISOString() })
           .eq('user_id', user.id)
-          .eq('created_at', meta.generatedAt)
+          .eq('id_temp', meta.generatedAt)
+      } else if (guestId) {
+        // Guest -> Local + Supabase
+        try {
+          const existing: any[] = JSON.parse(localStorage.getItem("thinkly_history") || "[]")
+          const updated = existing.map(entry =>
+            entry.date === meta.generatedAt
+              ? { ...entry, data: patched }
+              : entry
+          )
+          localStorage.setItem("thinkly_history", JSON.stringify(updated))
+        } catch { /* ignore */ }
+
+        await supabase
+          .from('guest_workflows')
+          .update({ data: patched })
+          .eq('guest_id', guestId)
+          .eq('id_temp', meta.generatedAt)
       }
     }
   }
+
 
   const handleNewWorkflow = () => {
     setActiveTab("Dashboard")
@@ -214,11 +298,8 @@ export default function Home() {
   }
 
   const handleTabChange = (tab: TabType) => {
-    // If user clicks ANY tab, we should ensure the tab content is visible
-    // and reset the "output" view if needed
     if (appView === "output") {
       setAppView("home")
-      // If clicking Dashboard, also clean up the state
       if (tab === "Dashboard") {
         setData(null)
         setMeta(null)
@@ -245,7 +326,6 @@ export default function Home() {
 
 
   const handleWorkflowSelect = (wf: SavedWorkflow) => {
-    // Stay on "My Workflows" tab — user knows they're viewing a saved workflow
     setActiveTab("My Workflows")
     setAppView("output")
     setData(wf.data)
@@ -279,6 +359,7 @@ export default function Home() {
       }
 
       const now = new Date().toISOString()
+      const tempId = Date.now()
       setData(result.data)
       setActiveTab("Dashboard")
       setAppView("output")
@@ -290,21 +371,31 @@ export default function Home() {
         isOwner: true
       })
 
-      // Save to local history
-      const newEntry = { id: Date.now(), prompt: originalPrompt, data: result.data, date: now }
-      const existing = JSON.parse(localStorage.getItem("thinkly_history") || "[]")
-      localStorage.setItem("thinkly_history", JSON.stringify([newEntry, ...existing]))
-
-      // Save to Supabase (if logged in)
+      // Save Logic
       if (user) {
+        // Authenticated
         await supabase.from('workflows').insert({
           user_id: user.id,
           prompt: originalPrompt,
           data: result.data,
           created_at: now,
-          id_temp: newEntry.id
+          id_temp: tempId
+        })
+      } else if (guestId) {
+        // Guest
+        const newEntry = { id: tempId, prompt: originalPrompt, data: result.data, date: now }
+        const existing = JSON.parse(localStorage.getItem("thinkly_history") || "[]")
+        localStorage.setItem("thinkly_history", JSON.stringify([newEntry, ...existing]))
+
+        await supabase.from('guest_workflows').insert({
+          guest_id: guestId,
+          prompt: originalPrompt,
+          data: result.data,
+          created_at: now,
+          id_temp: tempId
         })
       }
+
 
     } catch (err: any) {
       if (err.message.includes("401") || err.message.includes("Missing API Key")) {
@@ -453,6 +544,44 @@ export default function Home() {
 
           </AnimatePresence>
         </main>
+
+        {/* ── Migration Modal ── */}
+        <AnimatePresence>
+          {showMigrationModal && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="glass-panel max-w-md w-full p-8 border border-white/10 shadow-2xl rounded-3xl text-center"
+              >
+                <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-blue-500/30">
+                  <RefreshCw className="w-8 h-8 text-blue-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Welcome Back!</h3>
+                <p className="text-white/50 text-sm mb-8 leading-relaxed">
+                  We found workflows you created while logged out. Would you like to migrate them to your account now?
+                </p>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={handleMigrateWorkflows}
+                    disabled={loading}
+                    className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {loading ? "Migrating..." : "Yes, Migrate My Workflows"}
+                  </button>
+                  <button
+                    onClick={() => setShowMigrationModal(false)}
+                    className="w-full py-4 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white font-bold transition-all"
+                  >
+                    Maybe Later
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
 
         {/* FAB - New Workflow */}
         {showingOutput && (

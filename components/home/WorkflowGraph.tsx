@@ -31,7 +31,7 @@ import {
 import { WorkflowNode } from '@/types/workflow'
 import dagre from 'dagre'
 import { AnimatePresence, motion } from 'framer-motion'
-import { SimulationEngine, SimulationStep } from './SimulationEngine'
+
 
 const NODE_W = 280
 const NODE_H = 160
@@ -123,20 +123,14 @@ const nodeTypes = { custom: GlassNode }
 
 interface WorkflowGraphProps {
   nodes: WorkflowNode[]
-  simulationSteps?: SimulationStep[]
-  isSimulating?: boolean
   isRunningLive?: boolean
   runLogs?: Record<string, any>
-  onSimulationComplete?: () => void
 }
 
 export function WorkflowGraph({
   nodes: rawNodes,
-  simulationSteps = [],
-  isSimulating = false,
   isRunningLive = false,
   runLogs = {},
-  onSimulationComplete
 }: WorkflowGraphProps) {
   const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null)
 
@@ -270,19 +264,10 @@ export function WorkflowGraph({
           pannable
         />
 
-        <SimulationEngine
-          steps={simulationSteps}
-          isActive={isSimulating}
-          onComplete={onSimulationComplete || (() => { })}
-        />
+
 
         <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-          {isSimulating && (
-            <div className="glass-panel px-4 py-2 flex items-center gap-2 bg-purple-500/20 border border-purple-500/40 rounded-full shadow-lg">
-              <Activity className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-white uppercase tracking-widest">Simulation Active</span>
-            </div>
-          )}
+
 
           <AnimatePresence>
             {selectedNode && (

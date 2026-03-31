@@ -3,39 +3,47 @@ import { WorkflowPatch } from "./workflowPatcher";
 
 /**
  * Strips non-essential descriptive properties from the workflow nodes.
- * Keeps only topological mapping data (ids, edges, types) to save LLM tokens.
+ * Keeps only topological mapping data (ids, type, label) to save LLM tokens.
  */
 export function buildStructuralContext(workflow: WorkflowResponse): string {
   const compressedNodes = workflow.nodes.map((node: WorkflowNode) => {
-    // Retain only required topological mapping properties
+    // 1. Initial essential fields
     const minimalNode: any = {
       id: node.id,
       type: node.type,
       label: node.label,
-      tool: node.tool,
-      stage: node.stage,
-      nextNodes: node.nextNodes || [],
     };
 
-    if (node.type === "condition") {
-      minimalNode.falseNextNodes = (node as any).falseNextNodes || [];
+    // 2. Add topological fields ONLY if they are not empty
+    if (node.nextNodes && node.nextNodes.length > 0) {
+      minimalNode.nextNodes = node.nextNodes;
     }
 
-    if (node.type !== "trigger" && node.type !== "monitor") {
-      minimalNode.errorNodes = (node as any).errorNodes || [];
+    if (node.type === "condition") {
+      const falseNext = (node as any).falseNextNodes;
+      if (falseNext && falseNext.length > 0) {
+        minimalNode.falseNextNodes = falseNext;
+      }
     }
+
+    const errorNodes = (node as any).errorNodes;
+    if (errorNodes && errorNodes.length > 0) {
+      minimalNode.errorNodes = errorNodes;
+    }
+
+    // 3. Removed: description, tool, stage, apiEndpoint (Surgical Pruning)
 
     return minimalNode;
   });
 
   const structuralContext = {
     workflow_type: workflow.workflow_type,
-    tools: workflow.tools,
     nodes: compressedNodes
   };
 
   return JSON.stringify(structuralContext, null, 2);
 }
+
 
 export interface ValidationResult {
   isValid: boolean;

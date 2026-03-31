@@ -24,7 +24,9 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
         setUserId(user.id)
         fetchWorkflows(user.id)
       } else {
-        setLoading(false)
+        const guestId = localStorage.getItem("thinkly_guest_id")
+        if (guestId) fetchGuestWorkflows(guestId)
+        else setLoading(false)
       }
     }
     checkUser()
@@ -48,16 +50,39 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
     }
   }
 
+  const fetchGuestWorkflows = async (guestId: string) => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('guest_workflows')
+        .select('*')
+        .eq('guest_id', guestId)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      if (data) setWorkflows(data as any)
+    } catch (err) {
+      console.error("Fetch guest workflows error:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleDelete = async (id: string | number, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!userId) return
-
+    
     try {
+      const table = userId ? 'workflows' : 'guest_workflows'
+      const idKey = userId ? 'user_id' : 'guest_id'
+      const idVal = userId || localStorage.getItem("thinkly_guest_id")
+
+      if (!idVal) return
+
       const { error } = await supabase
-        .from('workflows')
+        .from(table)
         .delete()
         .eq('id', id)
-        .eq('user_id', userId)
+        .eq(idKey, idVal)
 
       if (error) throw error
       setWorkflows(prev => prev.filter(w => w.id !== id))
@@ -65,6 +90,7 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
       console.error("Delete workflow error:", err)
     }
   }
+
 
   // Helper to safely extract a displayable title from a workflow
   const getWorkflowTitle = (wf: SavedWorkflow): string => {

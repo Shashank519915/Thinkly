@@ -28,8 +28,6 @@ export function OutputCards({
   const [copied, setCopied] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
-  const [isSimulating, setIsSimulating] = useState(false)
-  const [simSteps, setSimSteps] = useState<any[]>([])
   const [isRunningLive, setIsRunningLive] = useState(false)
   const [runLogs, setRunLogs] = useState<Record<string, any>>({})
 
@@ -84,30 +82,7 @@ export function OutputCards({
     URL.revokeObjectURL(url)
   }
 
-  const handleRunSimulation = async () => {
-    if (!data || isSimulating) {
-      if (isSimulating) setIsSimulating(false)
-      return
-    }
 
-    setIsSimulating(true)
-    try {
-      const resp = await fetch('/api/simulate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nodes: data.nodes })
-      })
-      const result = await resp.json()
-      if (result.success) {
-        setSimSteps(result.steps)
-      } else {
-        setIsSimulating(false)
-      }
-    } catch (err) {
-      console.error("Simulation trigger failed:", err)
-      setIsSimulating(false)
-    }
-  }
 
   const handleRunLive = async () => {
     if (!data || isRunningLive) {
@@ -344,27 +319,7 @@ export function OutputCards({
             </div>
 
             <div className="flex items-center gap-2">
-              {mode === 'design' && (
-                <button
-                  onClick={handleRunSimulation}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold transition-all duration-300 border ${isSimulating
-                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/30 shadow-[0_0_20px_rgba(168,85,247,0.2)]'
-                    : 'bg-white/5 hover:bg-white/10 text-white/70 border-white/10'
-                    }`}
-                >
-                  {isSimulating ? (
-                    <>
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      Simulation Active
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-3 h-3 fill-current" />
-                      Run Simulation
-                    </>
-                  )}
-                </button>
-              )}
+
 
               {mode === 'execution' && (
                 <button
@@ -396,9 +351,6 @@ export function OutputCards({
         <div className="flex-1 w-full relative">
           <WorkflowGraph
             nodes={data.nodes}
-            isSimulating={isSimulating}
-            simulationSteps={simSteps}
-            onSimulationComplete={() => setIsSimulating(false)}
             isRunningLive={isRunningLive}
             runLogs={runLogs}
           />

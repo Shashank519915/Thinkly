@@ -27,6 +27,7 @@ yarn-error.log*
 
 # Documentation & Reports (User-specified exclusion)
 docs/
+tempresponsecheck/
 brain/
 *.md
 !README.md
@@ -49,3 +50,7 @@ Thumbs.db
 #mds
 AGENTS.md
 CLAUDE.md
+
+#folders
+test-scripts/
+test-scripts-assets/

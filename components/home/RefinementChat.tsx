@@ -8,6 +8,8 @@ import {
 } from "lucide-react"
 import { WorkflowResponse } from "@/types/workflow"
 import { WorkflowPatch, mergeWorkflowPatch } from "@/lib/ai/workflowPatcher"
+import { supabase } from "@/lib/supabase/client"
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,32 +52,85 @@ export function RefinementChat({
   const bottomRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [loadingStage, setLoadingStage] = useState(0)
   const isInitialMount = useRef(true)
+
 
   // Persist + restore chat history per workflow
   const storageKey = `thinkly_chat_${workflowId}`
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey)
-      if (saved) {
-        const parsed: ChatMessage[] = JSON.parse(saved)
-        if (parsed.length > 0) {
-          setMessages(parsed)
-          // Delay expansion slightly for the smooth entrance the user requested
-          setTimeout(() => {
-            setExpanded(true)
-          }, 1000)
-        }
-      }
-    } catch { /* ignore parse error */ }
-  }, [storageKey])
+    const fetchHistory = async () => {
+      // 1. Try Supabase first
+      try {
+        const guestId = localStorage.getItem("thinkly_guest_id")
+        const { data: { user } } = await supabase.auth.getUser()
 
-  const persistMessages = useCallback((msgs: ChatMessage[]) => {
+        let query = supabase.from(user ? 'chats' : 'guest_chats').select('messages')
+        if (user) query = query.eq('user_id', user.id).eq('workflow_id', workflowId)
+        else if (guestId) query = query.eq('guest_id', guestId).eq('workflow_id', workflowId)
+
+        const { data, error } = await query.maybeSingle()
+        if (error) throw error
+        
+        if (data && data.messages && data.messages.length > 0) {
+          setMessages(data.messages)
+          setTimeout(() => setExpanded(true), 800)
+          return
+        }
+      } catch (err) {
+        console.warn("Supabase fetch failed, falling back to local:", err)
+      }
+
+      // 2. Fallback to localStorage
+      try {
+        const saved = localStorage.getItem(storageKey)
+        if (saved) {
+          const parsed: ChatMessage[] = JSON.parse(saved)
+          if (parsed.length > 0) {
+            setMessages(parsed)
+            setTimeout(() => setExpanded(true), 1000)
+          }
+        }
+      } catch { /* ignore */ }
+    }
+
+    fetchHistory()
+  }, [storageKey, workflowId])
+
+  const persistMessages = useCallback(async (msgs: ChatMessage[]) => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(msgs))
-    } catch { /* quota exceeded, ignore */ }
-  }, [storageKey])
+      const guestId = localStorage.getItem("thinkly_guest_id")
+      const { data: { user } } = await supabase.auth.getUser()
+
+      // 1. Supabase Persistence (Cloud)
+      const payload = {
+        workflow_id: workflowId,
+        messages: msgs,
+        updated_at: new Date().toISOString()
+      }
+
+      const table = user ? 'chats' : 'guest_chats'
+      const idKey = user ? 'user_id' : 'guest_id'
+      const idVal = user ? user.id : guestId
+
+      if (idVal) {
+        await supabase.from(table).upsert({
+          ...payload,
+          [idKey]: idVal
+        }, { onConflict: `${idKey},workflow_id` })
+      }
+
+      // 2. Local Persistence (ONLY for Guests)
+      if (!user) {
+        localStorage.setItem(storageKey, JSON.stringify(msgs))
+      }
+    } catch (err) {
+      console.error("Persistence failed:", err)
+    }
+  }, [storageKey, workflowId])
+
+
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -122,6 +177,12 @@ export function RefinementChat({
     setMessages(withUser)
     setExpanded(true)
     setLoading(true)
+    setLoadingStage(1) // Stage 1: Optimistic
+
+    // Cycle stages for UI feedback
+    const stageTimer = setInterval(() => {
+      setLoadingStage(prev => (prev < 3 ? prev + 1 : prev))
+    }, 3500)
 
     try {
       const res = await fetch("/api/chat", {
@@ -133,8 +194,12 @@ export function RefinementChat({
           originalPrompt,
           useLessTokens,
           history: messages
-            .filter(m => m.role !== "patch")
-            .map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.content })),
+            .slice(-10) // Limit to last 10 for performance and scope
+            .map(m => ({ 
+              role: m.role, 
+              content: m.content,
+              patch: m.patch // Include the patch summary if it exists
+            })),
         }),
       })
 
@@ -154,15 +219,18 @@ export function RefinementChat({
 
       const withAnswer = [...withUser, assistantMsg]
       setMessages(withAnswer)
-      persistMessages(withAnswer)
+      await persistMessages(withAnswer)
     } catch (err: any) {
       setError(err.message)
       // Remove the user message on error
       setMessages(withUser.slice(0, -1))
     } finally {
+      clearInterval(stageTimer)
       setLoading(false)
+      setLoadingStage(0)
       inputRef.current?.focus()
     }
+
   }
 
   const handleApply = (msgId: string, patch: WorkflowPatch) => {
@@ -347,7 +415,13 @@ export function RefinementChat({
                         <span key={i} className="w-1 h-1 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
                       ))}
                     </span>
-                    <span className="text-[10px] text-white/30 font-medium">Thinking…</span>
+                    <span className="text-[10px] text-white/30 font-medium">
+                      {loadingStage === 1 && "Analyzing context..."}
+                      {loadingStage === 2 && "Refining logic..."}
+                      {loadingStage === 3 && "Deep graph repair..."}
+                      {loadingStage === 0 && "Thinking..."}
+                    </span>
+
                   </div>
                 </div>
               )}
