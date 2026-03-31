@@ -458,7 +458,7 @@ export default function Home() {
         {showingOutput && (
           <button
             onClick={handleNewWorkflow}
-            className="fixed bottom-8 right-8 z-[100] group flex items-center bg-gradient-to-r from-[var(--color-accent-purple)]/90 to-[var(--color-accent-blue)]/90 hover:from-[var(--color-accent-purple)] hover:to-[var(--color-accent-blue)] text-white rounded-full h-14 shadow-[0_0_20px_rgba(167,139,250,0.4)] hover:shadow-[0_0_30px_rgba(167,139,250,0.6)] transition-all duration-300 border border-white/20 hover:border-white/40 active:scale-95 cursor-pointer"
+            className="hidden md:flex fixed bottom-8 right-8 z-[100] group items-center bg-gradient-to-r from-[var(--color-accent-purple)]/90 to-[var(--color-accent-blue)]/90 hover:from-[var(--color-accent-purple)] hover:to-[var(--color-accent-blue)] text-white rounded-full h-14 shadow-[0_0_20px_rgba(167,139,250,0.4)] hover:shadow-[0_0_30px_rgba(167,139,250,0.6)] transition-all duration-300 border border-white/20 hover:border-white/40 active:scale-95 cursor-pointer"
           >
             <div className="w-14 h-14 flex items-center justify-center shrink-0">
               <Plus className="w-6 h-6 transition-transform duration-300 group-hover:rotate-90 drop-shadow-sm" />

@@ -229,7 +229,7 @@ export function RefinementChat({
               className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3 scroll-smooth"
             >
               {messages.map(msg => (
-                <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} gap-2`}>
+                <div key={msg.id} className={`w-full flex ${msg.role === "user" ? "justify-end pl-8" : "justify-start pr-8"} gap-2`}>
                   {msg.role !== "user" && (
                     <div className="w-6 h-6 rounded-full bg-[var(--color-accent-purple)]/20 border border-[var(--color-accent-purple)]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
                       {msg.mode === "patch"
@@ -363,7 +363,7 @@ export function RefinementChat({
         <div className="glass-panel relative rounded-[2rem] overflow-hidden flex items-center shadow-[0_8px_30px_rgba(0,0,0,0.8)] border border-white/10 group-focus-within:border-[var(--color-accent-purple)]/50 transition-all">
           
           {/* Absolute Dark Tint Underlay */}
-          <div className="absolute inset-0 bg-black/40 -z-10 pointer-events-none" />
+          <div className={`absolute inset-0 transition-colors duration-500 -z-10 pointer-events-none ${expanded ? 'bg-black/40' : 'bg-black/[0.25]'}`} />
 
           <div className="relative z-10 flex items-end w-full p-2">
             {/* Expand/collapse toggle when there are messages */}
@@ -396,8 +396,8 @@ export function RefinementChat({
               }}
               disabled={loading || disabled}
               placeholder={messages.length > 0
-                ? "Ask another question or request a change…"
-                : "Ask about this workflow or request a change…"
+                ? "Ask another question..."
+                : "Ask about this workflow..."
               }
               className="flex-1 bg-transparent border-none text-white placeholder-white/30 font-medium focus:outline-none focus:ring-0 px-2 py-3 md:text-base resize-none scrollbar-hide min-h-[44px] max-h-32"
               style={{ textShadow: "0 1px 4px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.6)" }}
