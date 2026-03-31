@@ -409,6 +409,12 @@ export default function Home() {
                     <p className="font-medium text-sm">{error}</p>
                   </div>
                 )}
+                
+                {/* Dashboard Legal Footer */}
+                <div className="fixed bottom-6 right-6 flex gap-4 z-40 opacity-50 hover:opacity-100 transition-opacity">
+                  <a href="/privacy" className="text-[10px] text-white/50 hover:text-white font-bold uppercase tracking-widest transition-colors">Privacy</a>
+                  <a href="/terms" className="text-[10px] text-white/50 hover:text-white font-bold uppercase tracking-widest transition-colors">Terms</a>
+                </div>
               </motion.div>
             )}
 

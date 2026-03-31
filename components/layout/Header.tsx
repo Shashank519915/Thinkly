@@ -137,11 +137,15 @@ export function Header({ activeTab, onTabChange, onNewWorkflow, className, ...pr
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/10 text-white/70 hover:text-red-400 text-xs font-bold transition-all"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/10 text-white/70 hover:text-red-400 text-xs font-bold transition-all mb-2"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     Secure Logout
                   </button>
+                  <div className="border-t border-white/5 pt-2 mt-1 space-y-1">
+                    <a href="/privacy" className="block px-3 py-1.5 text-[10px] font-bold text-white/30 hover:text-white/60 uppercase tracking-widest transition-colors rounded-lg hover:bg-white/5">Privacy Policy</a>
+                    <a href="/terms" className="block px-3 py-1.5 text-[10px] font-bold text-white/30 hover:text-white/60 uppercase tracking-widest transition-colors rounded-lg hover:bg-white/5">Terms of Service</a>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
