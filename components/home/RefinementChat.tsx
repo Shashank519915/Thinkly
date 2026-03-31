@@ -400,8 +400,7 @@ export function RefinementChat({
                 ? "Ask another question..."
                 : "Ask about this workflow..."
               }
-              className="flex-1 bg-transparent border-none text-white placeholder-white/30 font-medium focus:outline-none focus:ring-0 px-2 py-3 md:text-base resize-none scrollbar-hide min-h-[44px] max-h-32"
-              style={{ textShadow: "0 1px 4px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.6)" }}
+              className="flex-1 bg-transparent border-none text-white placeholder-white/40 font-medium focus:outline-none focus:ring-0 px-2 py-3 md:text-base resize-none scrollbar-hide min-h-[44px] max-h-32"
             />
             <button
               type="submit"
