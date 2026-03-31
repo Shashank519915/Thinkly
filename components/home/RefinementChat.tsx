@@ -204,7 +204,7 @@ export function RefinementChat({
             style={{ maxHeight: 380 }}
           >
             {/* Absolute Dark Tint Underlay */}
-            <div className="absolute inset-0 bg-black/80 -z-10 pointer-events-none" />
+            <div className="absolute inset-0 bg-black/50 -z-10 pointer-events-none" />
             
             {/* Panel header */}
             <div className="relative z-10 flex items-center justify-between px-4 py-2.5 border-b border-white/8 flex-shrink-0">
@@ -363,7 +363,7 @@ export function RefinementChat({
         <div className="glass-panel relative rounded-[2rem] overflow-hidden flex items-center shadow-[0_8px_30px_rgba(0,0,0,0.8)] border border-white/10 group-focus-within:border-[var(--color-accent-purple)]/50 transition-all">
           
           {/* Absolute Dark Tint Underlay */}
-          <div className="absolute inset-0 bg-black/70 -z-10 pointer-events-none" />
+          <div className="absolute inset-0 bg-black/40 -z-10 pointer-events-none" />
 
           <div className="relative z-10 flex items-end w-full p-2">
             {/* Expand/collapse toggle when there are messages */}
