@@ -182,13 +182,19 @@ export default function Home() {
 
       if (guestChats && guestChats.length > 0) {
         const toInsertChats = guestChats.map(gc => ({
+          id: gc.id,
           user_id: user.id,
           workflow_id: gc.workflow_id,
-          messages: gc.messages,
-          created_at: gc.created_at,
-          updated_at: gc.updated_at
+          role: gc.role,
+          content: gc.content,
+          mode: gc.mode,
+          patch: gc.patch,
+          applied: gc.applied,
+          dismissed: gc.dismissed,
+          timestamp: gc.timestamp,
+          created_at: gc.created_at
         }))
-        const { error: insChatError } = await supabase.from('chats').insert(toInsertChats)
+        const { error: insChatError } = await supabase.from('chats').upsert(toInsertChats)
         if (insChatError) throw insChatError
         await supabase.from('guest_chats').delete().eq('guest_id', guestId)
       }

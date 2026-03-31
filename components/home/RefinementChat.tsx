@@ -66,17 +66,23 @@ export function RefinementChat({
         const guestId = localStorage.getItem("thinkly_guest_id")
         const { data: { user } } = await supabase.auth.getUser()
 
-        let query = supabase.from(user ? 'chats' : 'guest_chats').select('messages')
-        if (user) query = query.eq('user_id', user.id).eq('workflow_id', workflowId)
-        else if (guestId) query = query.eq('guest_id', guestId).eq('workflow_id', workflowId)
+        const table = user ? 'chats' : 'guest_chats'
+        const idKey = user ? 'user_id' : 'guest_id'
+        const idVal = user ? user.id : guestId
 
-        const { data, error } = await query.maybeSingle()
-        if (error) throw error
-        
-        if (data && data.messages && data.messages.length > 0) {
-          setMessages(data.messages)
-          setTimeout(() => setExpanded(true), 800)
-          return
+        if (idVal) {
+          const { data, error } = await supabase
+            .from(table)
+            .select('*')
+            .eq(idKey, idVal)
+            .eq('workflow_id', workflowId)
+            .order('timestamp', { ascending: true })
+
+          if (!error && data && data.length > 0) {
+            setMessages(data as ChatMessage[])
+            setTimeout(() => setExpanded(true), 800)
+            return
+          }
         }
       } catch (err) {
         console.warn("Supabase fetch failed, falling back to local:", err)
@@ -103,22 +109,26 @@ export function RefinementChat({
       const guestId = localStorage.getItem("thinkly_guest_id")
       const { data: { user } } = await supabase.auth.getUser()
 
-      // 1. Supabase Persistence (Cloud)
-      const payload = {
-        workflow_id: workflowId,
-        messages: msgs,
-        updated_at: new Date().toISOString()
-      }
-
+      // 1. Supabase Persistence (Cloud - Row per message)
       const table = user ? 'chats' : 'guest_chats'
       const idKey = user ? 'user_id' : 'guest_id'
       const idVal = user ? user.id : guestId
 
       if (idVal) {
-        await supabase.from(table).upsert({
-          ...payload,
-          [idKey]: idVal
-        }, { onConflict: `${idKey},workflow_id` })
+        // Upsert all messages to ensure state (applied/dismissed) is synced
+        const toSave = msgs.map(m => ({
+          id: m.id,
+          [idKey]: idVal,
+          workflow_id: workflowId,
+          role: m.role,
+          content: m.content,
+          mode: m.mode,
+          patch: m.patch,
+          applied: m.applied,
+          dismissed: m.dismissed,
+          timestamp: m.timestamp
+        }))
+        await supabase.from(table).upsert(toSave, { onConflict: 'id' })
       }
 
       // 2. Local Persistence (ONLY for Guests)
@@ -253,12 +263,6 @@ export function RefinementChat({
     )
     setMessages(updated)
     persistMessages(updated)
-  }
-
-  const handleClear = () => {
-    setMessages([])
-    setExpanded(false)
-    localStorage.removeItem(storageKey)
   }
 
   return (
