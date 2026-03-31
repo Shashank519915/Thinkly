@@ -45,6 +45,7 @@ export function RefinementChat({
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const [useLessTokens, setUseLessTokens] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -130,6 +131,7 @@ export function RefinementChat({
           question,
           workflow,
           originalPrompt,
+          useLessTokens,
           history: messages
             .filter(m => m.role !== "patch")
             .map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.content })),
@@ -364,7 +366,7 @@ export function RefinementChat({
       </AnimatePresence>
 
       {/* ── Input Bar ── */}
-      <form onSubmit={handleSubmit} className="pointer-events-auto w-full relative group z-10">
+      <form onSubmit={handleSubmit} className="pointer-events-auto w-full relative group z-10 flex flex-col gap-1.5">
         <div className={`absolute inset-0 bg-gradient-to-r from-[var(--color-accent-purple)]/30 to-[var(--color-accent-blue)]/30 rounded-full blur-xl transition-opacity duration-500 -z-10 ${expanded ? 'opacity-100' : 'opacity-0'}`} />
         <div className="glass-panel relative rounded-[2rem] overflow-hidden flex items-center shadow-[0_8px_30px_rgba(0,0,0,0.8)] border border-white/10 group-focus-within:border-[var(--color-accent-purple)]/50 transition-all">
           
@@ -413,6 +415,19 @@ export function RefinementChat({
               }
             </button>
           </div>
+        </div>
+
+        {/* ── Token Optimization Toggle ── */}
+        <div className="flex justify-end pr-4 mt-0.5">
+          <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-white/40 hover:text-white/70 transition-colors">
+            <input
+              type="checkbox"
+              checked={useLessTokens}
+              onChange={e => setUseLessTokens(e.target.checked)}
+              className="rounded-sm bg-black/40 border-white/20 text-[var(--color-accent-purple)] focus:ring-0 focus:ring-offset-0 transition-colors w-3 h-3"
+            />
+            Use less tokens (Experimental structural context)
+          </label>
         </div>
       </form>
     </div>

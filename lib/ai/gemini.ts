@@ -10,6 +10,7 @@ import { parseResponse } from "./responseParser";
 import { parsePatch, WorkflowPatch } from "./workflowPatcher";
 import { WorkflowResponse, WorkflowNode } from "@/types/workflow";
 import { getSimulationSystemInstruction, buildBatchSimulationPrompt } from "./simulationPromptBuilder";
+import { buildStructuralContext, validatePatch } from "./structuralContextBuilder";
 
 function getClient() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -57,7 +58,8 @@ export async function askWorkflowChat(
   question: string,
   workflow: WorkflowResponse,
   originalPrompt: string,
-  history: { role: string; content: string }[] = []
+  history: { role: string; content: string }[] = [],
+  useLessTokens: boolean = false
 ): Promise<ChatResult> {
   const genAI = getClient();
   const intent = detectIntent(question);
@@ -98,11 +100,14 @@ export async function askWorkflowChat(
       systemInstruction: getChatModifySystemInstruction(),
     });
 
+    const contextStr = useLessTokens 
+      ? `Structural Nodes JSON:\n${buildStructuralContext(workflow)}`
+      : `Current nodes JSON (for reference when building the patch):\n${JSON.stringify(workflow.nodes, null, 2)}`;
+
     const prompt = [
       context,
       "",
-      "Current nodes JSON (for reference when building the patch):",
-      JSON.stringify(workflow.nodes, null, 2),
+      contextStr,
       "",
       `Modification request: "${question}"`,
       "",
@@ -111,8 +116,41 @@ export async function askWorkflowChat(
 
     const result = await model.generateContent(prompt);
     const raw = result.response.text();
-
     const patch = parsePatch(raw);
+
+    if (useLessTokens && patch.feasible) {
+      const validation = validatePatch(patch, workflow);
+      if (!validation.isValid) {
+        // Smart Retry Fallback (Silent)
+        console.log("Patch failed structural validation, retrying with full context:", validation.error);
+        const retryPrompt = [
+            context,
+            "",
+            `Current nodes JSON (for reference when building the patch):\n${JSON.stringify(workflow.nodes, null, 2)}`,
+            "",
+            `Modification request: "${question}"`,
+            "",
+            `CRITICAL ERROR: Your previous attempt failed validation: ${validation.error}`,
+            "Read the full schema carefully and generate a correct WorkflowPatch.",
+            "Output ONLY the JSON object. No explanations, no markdown fences.",
+        ].join("\n");
+        
+        const retryResult = await model.generateContent(retryPrompt);
+        const retryPatch = parsePatch(retryResult.response.text());
+        const retryValidation = validatePatch(retryPatch, workflow);
+        
+        if (!retryValidation.isValid) {
+            return {
+                mode: "patch",
+                answer: "⚠️ Unable to properly generate a structurally valid patch for this request.",
+                patch: { ...retryPatch, feasible: false, reason: `Failed deterministic validation: ${retryValidation.error}` }
+            };
+        }
+        
+        return { mode: "patch", answer: retryPatch.summary, patch: retryPatch };
+      }
+    }
+
     const summary = patch.feasible
       ? patch.summary
       : `⚠️ This change is not feasible: ${patch.reason}`;
