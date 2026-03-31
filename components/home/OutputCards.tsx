@@ -10,7 +10,6 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism"
 import { WorkflowGraph } from "./WorkflowGraph"
 import { generateN8nSchema } from "@/lib/export/n8n"
 import { supabase } from "@/lib/supabase/client"
-import { getExecutionOrder } from "@/lib/ai/utils"
 
 export function OutputCards({
   data,
@@ -126,30 +125,33 @@ export function OutputCards({
     setRunLogs({})
 
     try {
-      // Use edges from data if available, otherwise pass empty array (WorkflowGraph derives them anyway)
-      const order = getExecutionOrder(data.nodes, data.edges || [])
-      const context: Record<string, any> = {}
+      const resp = await fetch('/api/run/live', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ nodes: data.nodes, edges: data.edges || [] })
+      })
 
-      for (const node of order) {
-        setRunLogs(prev => ({ ...prev, [node.id]: { status: 'running' } }))
+      const result = await resp.json()
+      if (!resp.ok) throw new Error(result.error || `Workflow execution failed`)
 
-        const resp = await fetch('/api/run/node', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
-          },
-          body: JSON.stringify({ node, context })
+      // Convert backend logs into the frontend format runLogs expects
+      const newLogs: Record<string, any> = {}
+      if (result.logs) {
+        result.logs.forEach((log: any) => {
+          newLogs[log.nodeId] = {
+            status: log.status,
+            output: log.output,
+            error: log.error
+          }
         })
+      }
+      setRunLogs(newLogs)
 
-        const result = await resp.json()
-        if (!resp.ok) throw new Error(result.error || `Node ${node.label} failed`)
-
-        context[node.id] = result.output
-        setRunLogs(prev => ({
-          ...prev,
-          [node.id]: { status: 'success', output: result.output }
-        }))
+      if (result.status === 'failed') {
+        throw new Error("Workflow failed. Check logs for details.")
       }
     } catch (err: any) {
       console.error("Live run failed:", err)

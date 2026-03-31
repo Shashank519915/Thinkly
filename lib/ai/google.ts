@@ -23,7 +23,8 @@ export async function getGoogleAuth(userId: string) {
   const tokens = JSON.parse(decrypt(integ.encrypted_secret))
 
   // 3. Check expiry (simple buffer of 5 mins)
-  const isExpired = tokens.expiry_date ? (Date.now() > tokens.expiry_date - 300000) : false
+  // FIX: If expiry_date is missing (due to legacy bug), force a refresh if possible
+  const isExpired = !tokens.expiry_date || (Date.now() > tokens.expiry_date - 300000)
 
   if (isExpired && tokens.refresh_token) {
     // 4. Refresh token

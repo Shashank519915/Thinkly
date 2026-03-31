@@ -8,6 +8,9 @@ export async function GET(req: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google/callback`
   
+  // Security Fix: Generate a cryptographically secure random string instead of raw userId
+  const oauthState = crypto.randomUUID()
+  
   // Scopes for Sheet and Gmail
   const scopes = [
     'https://www.googleapis.com/auth/spreadsheets',
@@ -22,8 +25,18 @@ export async function GET(req: Request) {
     `response_type=code&` +
     `scope=${encodeURIComponent(scopes)}&` +
     `access_type=offline&` +
-    `state=${userId}&` +
+    `state=${oauthState}&` +
     `prompt=consent`
 
-  return NextResponse.json({ url })
+  const response = NextResponse.json({ url })
+
+  // Store state token securely in an HttpOnly cookie
+  response.cookies.set('oauth_state', oauthState, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 15 * 60 // 15 minutes
+  })
+
+  return response
 }

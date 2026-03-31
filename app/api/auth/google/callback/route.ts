@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { encrypt } from "@/lib/crypto"
+import { cookies } from "next/headers"
 
 export async function GET(req: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -14,12 +15,21 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url)
   const code = searchParams.get('code')
-  const state = searchParams.get('state') // This is our userId passed from the frontend
+  const state = searchParams.get('state')
   
   if (!code) return NextResponse.redirect(new URL('/?error=no_code', req.url))
 
+  // 1. Verify CSRF state token
+  const cookieStore = await cookies()
+  const savedState = cookieStore.get('oauth_state')?.value
+
+  if (!state || !savedState || state !== savedState) {
+    console.error("OAuth CSRF failure: state mismatch")
+    return NextResponse.redirect(new URL('/?error=invalid_state', req.url))
+  }
+
   try {
-    // 1. Exchange code for tokens
+    // 2. Exchange code for tokens
     const clientId = process.env.GOOGLE_CLIENT_ID
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET
     const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google/callback`
@@ -39,24 +49,27 @@ export async function GET(req: Request) {
     const tokenData = await tokenRes.json()
     if (!tokenRes.ok) throw new Error(tokenData.error_description || 'Token exchange failed')
 
-    // 2. Identify the user
-    // We try Supabase Auth first (cookies), then fallback to our 'state' param
-    const { data: { user } } = await supabase.auth.getUser()
-    const finalUserId = user?.id || state
+    // FIX 1-HOUR REFRESH BUG: Add explicit expiry_date based on Google's expires_in
+    if (tokenData.expires_in) {
+      tokenData.expiry_date = Date.now() + (tokenData.expires_in * 1000)
+    }
 
-    if (!finalUserId) {
-      console.error("No user found in session or state")
+    // 3. Identify the user strictly via Session (no fake state fallbacks allowed!)
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      console.error("No user valid session found securely via cookies.")
       return NextResponse.redirect(new URL('/?error=unauthorized_integration', req.url))
     }
 
-    // 3. Encrypt the token object
+    // 4. Encrypt the token object
     const encrypted = encrypt(JSON.stringify(tokenData))
 
-    // 4. Upsert into database
+    // 5. Upsert into database
     const { error: dbError } = await supabase
       .from("user_integrations")
       .upsert({
-        user_id: finalUserId,
+        user_id: user.id,
         service_name: "google",
         encrypted_secret: encrypted,
         updated_at: new Date().toISOString()
@@ -64,8 +77,10 @@ export async function GET(req: Request) {
 
     if (dbError) throw dbError
 
-    // 5. Success! Redirect back to integrations view
-    return NextResponse.redirect(new URL('/?view=integrations&status=connected', req.url))
+    // 6. Success! Redirect back to integrations view
+    const response = NextResponse.redirect(new URL('/?view=integrations&status=connected', req.url))
+    response.cookies.delete('oauth_state')
+    return response
 
   } catch (err: any) {
     console.error("Google Callback Error:", err)

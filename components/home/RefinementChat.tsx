@@ -357,7 +357,7 @@ export function RefinementChat({
       {/* ── Input Bar ── */}
       <form onSubmit={handleSubmit} className="pointer-events-auto w-full relative group">
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-accent-purple)]/30 to-[var(--color-accent-blue)]/30 rounded-full blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity -z-10" />
-        <div className="glass-panel relative rounded-[2rem] overflow-hidden flex items-center shadow-[0_8px_30px_rgba(0,0,0,0.8)] border border-white/10 group-focus-within:border-[var(--color-accent-purple)]/50 transition-all">
+        <div className="glass-panel bg-black/40 relative rounded-[2rem] overflow-hidden flex items-center shadow-[0_8px_30px_rgba(0,0,0,0.8)] border border-white/10 group-focus-within:border-[var(--color-accent-purple)]/50 transition-all">
           <div className="relative z-10 flex items-end w-full p-2">
             {/* Expand/collapse toggle when there are messages */}
             {messages.length > 0 && (
@@ -392,7 +392,7 @@ export function RefinementChat({
                 ? "Ask another question or request a change…"
                 : "Ask about this workflow or request a change…"
               }
-              className="flex-1 bg-transparent border-none text-white placeholder-white/30 font-medium focus:outline-none focus:ring-0 px-2 py-3 md:text-base drop-shadow-sm resize-none scrollbar-hide min-h-[44px] max-h-32"
+              className="flex-1 bg-transparent border-none text-white placeholder-white/30 font-medium focus:outline-none focus:ring-0 px-2 py-3 md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] resize-none scrollbar-hide min-h-[44px] max-h-32"
             />
             <button
               type="submit"
