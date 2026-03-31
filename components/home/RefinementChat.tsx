@@ -200,11 +200,14 @@ export function RefinementChat({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ type: "spring", damping: 28, stiffness: 260 }}
-            className="pointer-events-auto w-full glass-panel bg-black/70 backdrop-blur-2xl border border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.9)] rounded-2xl overflow-hidden flex flex-col"
+            className="pointer-events-auto relative w-full glass-panel backdrop-blur-2xl border border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.9)] rounded-2xl overflow-hidden flex flex-col"
             style={{ maxHeight: 380 }}
           >
+            {/* Absolute Dark Tint Underlay */}
+            <div className="absolute inset-0 bg-black/80 -z-10 pointer-events-none" />
+            
             {/* Panel header */}
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/8 flex-shrink-0">
+            <div className="relative z-10 flex items-center justify-between px-4 py-2.5 border-b border-white/8 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-3.5 h-3.5 text-[var(--color-accent-purple)]" />
                 <span className="text-xs font-bold text-white/80 tracking-wide">Workflow Assistant</span>
@@ -355,16 +358,20 @@ export function RefinementChat({
       </AnimatePresence>
 
       {/* ── Input Bar ── */}
-      <form onSubmit={handleSubmit} className="pointer-events-auto w-full relative group">
+      <form onSubmit={handleSubmit} className="pointer-events-auto w-full relative group z-10">
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-accent-purple)]/30 to-[var(--color-accent-blue)]/30 rounded-full blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity -z-10" />
-        <div className="glass-panel bg-black/40 relative rounded-[2rem] overflow-hidden flex items-center shadow-[0_8px_30px_rgba(0,0,0,0.8)] border border-white/10 group-focus-within:border-[var(--color-accent-purple)]/50 transition-all">
+        <div className="glass-panel relative rounded-[2rem] overflow-hidden flex items-center shadow-[0_8px_30px_rgba(0,0,0,0.8)] border border-white/10 group-focus-within:border-[var(--color-accent-purple)]/50 transition-all">
+          
+          {/* Absolute Dark Tint Underlay */}
+          <div className="absolute inset-0 bg-black/70 -z-10 pointer-events-none" />
+
           <div className="relative z-10 flex items-end w-full p-2">
             {/* Expand/collapse toggle when there are messages */}
             {messages.length > 0 && (
               <button
                 type="button"
                 onClick={() => setExpanded(e => !e)}
-                className="ml-3 mr-1 mb-3 text-white/40 hover:text-white/80 transition-colors"
+                className="ml-3 mr-1 mb-3 text-white/50 hover:text-white/90 transition-colors drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
               >
                 {expanded
                   ? <ChevronDown className="w-4 h-4" />
@@ -373,7 +380,7 @@ export function RefinementChat({
               </button>
             )}
             {messages.length === 0 && (
-              <Sparkles className="w-5 h-5 text-[var(--color-accent-purple)] ml-6 mr-2 mb-3 drop-shadow-sm" />
+              <Sparkles className="w-5 h-5 text-[var(--color-accent-purple)] ml-6 mr-2 mb-3 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" />
             )}
             <textarea
               ref={inputRef as any}
@@ -392,7 +399,8 @@ export function RefinementChat({
                 ? "Ask another question or request a change…"
                 : "Ask about this workflow or request a change…"
               }
-              className="flex-1 bg-transparent border-none text-white placeholder-white/30 font-medium focus:outline-none focus:ring-0 px-2 py-3 md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] resize-none scrollbar-hide min-h-[44px] max-h-32"
+              className="flex-1 bg-transparent border-none text-white placeholder-white/30 font-medium focus:outline-none focus:ring-0 px-2 py-3 md:text-base resize-none scrollbar-hide min-h-[44px] max-h-32"
+              style={{ textShadow: "0 1px 4px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.6)" }}
             />
             <button
               type="submit"
