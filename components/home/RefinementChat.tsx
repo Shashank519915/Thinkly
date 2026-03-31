@@ -290,22 +290,22 @@ export function RefinementChat({
                           <p className="text-[10px] text-red-400/80">{msg.patch.reason}</p>
                         )}
                         {msg.patch.feasible && (
-                          <div className="flex flex-wrap items-center gap-2 mt-2">
+                          <div className="flex flex-col sm:flex-row items-stretch gap-2 mt-2 w-full">
                             {isOwner ? (
                               <button
                                 onClick={() => handleApply(msg.id, msg.patch!)}
-                                className="flex flex-1 justify-center items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-400/15 hover:bg-green-400/25 border border-green-400/30 text-green-400 text-[10px] font-bold uppercase tracking-wider transition-colors active:scale-95 whitespace-nowrap min-w-max"
+                                className="flex flex-1 justify-center items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-400/15 hover:bg-green-400/25 border border-green-400/30 text-green-400 text-[10px] font-bold uppercase tracking-wider transition-colors active:scale-95 whitespace-nowrap"
                               >
                                 <CheckCircle2 className="w-3 h-3" /> Apply Changes
                               </button>
                             ) : (
-                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/30 text-[9px] font-medium italic">
+                              <div className="flex flex-1 items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/30 text-[9px] font-medium italic">
                                 Preview only
                               </div>
                             )}
                             <button
                               onClick={() => handleDismiss(msg.id)}
-                              className="flex justify-center items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/8 border border-white/10 text-white/40 hover:text-white/70 text-[10px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap shrink-0"
+                              className="flex flex-1 justify-center items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/8 border border-white/10 text-white/40 hover:text-white/70 text-[10px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap"
                             >
                               <X className="w-3 h-3" /> Dismiss
                             </button>
