@@ -21,7 +21,8 @@ const FluidGlassBackground = dynamic(() => import("@/components/ui/FluidGlassBac
 export interface WorkflowMeta {
   title: string
   prompt: string
-  generatedAt: string  // ISO timestamp
+  workflowId: string // Numeric id_temp for stable chat lookup
+  generatedAt: string // ISO timestamp for display
   source: "generated" | "saved" | "shared"
   isOwner: boolean
 }
@@ -111,6 +112,7 @@ export default function Home() {
         setMeta({
           title: wf.data.workflow_type || "Shared Workflow",
           prompt: wf.prompt,
+          workflowId: wf.id_temp.toString(),
           generatedAt: wf.created_at,
           source: "shared",
           isOwner: wf.user_id === user?.id
@@ -223,6 +225,7 @@ export default function Home() {
     setMeta({
       title: duplicateData.workflow_type || "Copied Workflow",
       prompt: prompt,
+      workflowId: id.toString(),
       generatedAt: now,
       source: "saved",
       isOwner: true
@@ -264,13 +267,13 @@ export default function Home() {
           .from('workflows')
           .update({ data: patched, updated_at: new Date().toISOString() })
           .eq('user_id', user.id)
-          .eq('id_temp', meta.generatedAt)
+          .eq('id_temp', meta.workflowId)
       } else if (guestId) {
         // Guest -> Local + Supabase
         try {
           const existing: any[] = JSON.parse(localStorage.getItem("thinkly_history") || "[]")
           const updated = existing.map(entry =>
-            entry.date === meta.generatedAt
+            entry.id.toString() === meta.workflowId
               ? { ...entry, data: patched }
               : entry
           )
@@ -281,7 +284,7 @@ export default function Home() {
           .from('guest_workflows')
           .update({ data: patched })
           .eq('guest_id', guestId)
-          .eq('id_temp', meta.generatedAt)
+          .eq('id_temp', meta.workflowId)
       }
     }
   }
@@ -332,6 +335,7 @@ export default function Home() {
     setMeta({
       title: wf.data.workflow_type ?? "Saved Workflow",
       prompt: wf.prompt,
+      workflowId: wf.id_temp.toString(),
       generatedAt: wf.created_at,
       source: "saved",
       isOwner: true
@@ -366,6 +370,7 @@ export default function Home() {
       setMeta({
         title: result.data.workflow_type ?? "Generated Workflow",
         prompt: originalPrompt,
+        workflowId: tempId.toString(),
         generatedAt: now,
         source: "generated",
         isOwner: true
@@ -474,7 +479,7 @@ export default function Home() {
                   <RefinementChat
                     workflow={data}
                     originalPrompt={meta.prompt}
-                    workflowId={meta.generatedAt}
+                    workflowId={meta.workflowId}
                     onApplyPatch={handleApplyPatch}
                     disabled={loading}
                     isOwner={meta.isOwner}

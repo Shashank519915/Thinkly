@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase/client"
 
 export interface SavedWorkflow {
   id: string | number;
+  id_temp: string | number;
   prompt: string;
   data: WorkflowResponse;
   created_at: string;
