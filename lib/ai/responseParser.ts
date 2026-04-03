@@ -5,25 +5,58 @@ import { WorkflowResponse } from "@/types/workflow";
  * This is resilient to AI "chatter" before and after the JSON block.
  */
 function extractBalancedJSON(text: string): string | null {
+  // 1. First, check for markdown code blocks as they are the most explicit
+  const jsonMarkdownMatch = text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+  if (jsonMarkdownMatch) return jsonMarkdownMatch[1];
+
+  // 2. Heuristic: Find all candidate blocks starting with { and ending with }
+  // We want the block that contains our mandatory keys (workflow_type or nodes)
+  const candidates: string[] = [];
+  let startIdx = 0;
+  while ((startIdx = text.indexOf('{', startIdx)) !== -1) {
+    const endIdx = text.lastIndexOf('}');
+    if (endIdx > startIdx) {
+      candidates.push(text.substring(startIdx, endIdx + 1));
+    }
+    startIdx++;
+  }
+
+  // Rank candidates by content: prioritize those with mandatory keys
+  const validCandidates = candidates.filter(c => 
+    c.includes('"workflow_type"') || 
+    c.includes('"nodes"') || 
+    c.includes('"mode"') ||
+    c.includes('"answer"') ||
+    c.includes('"architecture"')
+  );
+
+  if (validCandidates.length > 0) {
+    // Sort by length - usually the largest block containing the keys is the official output
+    return validCandidates.sort((a, b) => b.length - a.length)[0];
+  }
+
+  // Fallback to the largest possible block
   const firstOpen = text.indexOf('{');
   const lastClose = text.lastIndexOf('}');
-  
-  if (firstOpen === -1 || lastClose === -1 || lastClose < firstOpen) {
-    return null;
+  if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
+    return text.substring(firstOpen, lastClose + 1);
   }
-  
-  return text.substring(firstOpen, lastClose + 1);
+
+  return null;
 }
 
 export function parseResponse(rawText: string): WorkflowResponse {
   try {
     // 1. Recursive cleaning of common Gemini formatters
-    let text = rawText.replace(/```json|```/g, "").trim();
+    let text = rawText
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
 
     // 2. Identify and fix common AI syntax hallucinations (string concatenation)
     text = text.replace(/"\s*\+\s*(\n\s*)?"/g, "");
-    
-    // 3. Balanced extraction to isolate the core JSON block
+
+    // 3. Robust heuristic-based extraction
     const cleanText = extractBalancedJSON(text);
     if (!cleanText) {
       throw new Error("Could not locate JSON structural bounds.");

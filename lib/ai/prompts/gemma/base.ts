@@ -13,6 +13,8 @@ export function getSystemInstruction(): string {
     "5. GRAPH COMPLETENESS: Every node must be part of a connected DAG. Error paths are mandatory for all external API calls.",
     "6. STRICT ARRAY EDGES: `nextNodes`, `falseNextNodes`, and `errorNodes` MUST be flat arrays of strings (node IDs). NEVER use objects for these fields.",
     "7. CONDITION NODES: Use `nextNodes` for the 'TRUE/PASS' path and `falseNextNodes` for the 'FALSE/FAIL' path.",
+    "8. NO CHATTER: Do not provide explanations, notes, or apologies. Do not include markdown code blocks (e.g. ```json). Start your response with '{' and end with '}'.",
+    "9. RAW JSON ONLY: Your entire output must be a single parseable JSON object. No preamble, no post-script.",
     "",
     "ARCHITECTURAL RULES:",
     "- Stage definition is mandatory for every node.",
