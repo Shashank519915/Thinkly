@@ -270,42 +270,52 @@ export function OutputCards({
       <Card title="Workflow Breakdown" icon={<GitBranch className="w-4 h-4 text-[var(--color-accent-purple)]" />}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* Input */}
-          <div className="flex flex-col gap-2.5 p-5 rounded-2xl bg-black/50 border border-white/10 hover:bg-black/60 transition-all duration-300 group/item shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-[var(--color-accent-purple)] opacity-40" />
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 p-4.5 rounded-2xl bg-black/20 border border-white/8 hover:bg-black/30 transition-all duration-300 group/item shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-[var(--color-accent-purple)] opacity-30" />
+            <div className="flex items-center gap-2 mb-1">
               <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent-purple)] shadow-[0_0_8px_var(--color-accent-purple)]" />
               <span className="text-[var(--color-accent-purple)] font-black text-[9px] uppercase tracking-widest opacity-80 group-hover/item:opacity-100 transition-opacity">Input Data</span>
             </div>
             <div className="pl-3.5 border-l border-white/10">
-              <SafeJsonView value={data.workflow.input} className="italic" />
+              <p className="text-[11px] text-white/50 leading-relaxed font-medium italic">
+                {data.nodes?.[0]?.description || (typeof data.workflow.input === 'string' && !data.workflow.input.startsWith('{') ? data.workflow.input : "Input definition for this lifecycle.")}
+              </p>
             </div>
           </div>
 
           {/* Process */}
-          <div className="flex flex-col gap-2.5 p-5 rounded-2xl bg-black/50 border border-white/10 hover:bg-black/60 transition-all duration-300 group/item shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-[var(--color-accent-blue)] opacity-40" />
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 p-4.5 rounded-2xl bg-black/20 border border-white/8 hover:bg-black/30 transition-all duration-300 group/item shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-[var(--color-accent-blue)] opacity-30" />
+            <div className="flex items-center gap-2 mb-1">
               <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent-blue)] shadow-[0_0_8px_var(--color-accent-blue)]" />
               <span className="text-[var(--color-accent-blue)] font-black text-[9px] uppercase tracking-widest opacity-80 group-hover/item:opacity-100 transition-opacity">Core Process</span>
             </div>
             <div className="pl-3.5 border-l border-white/10">
-              <SafeJsonView value={data.workflow.process} />
+              <p className="text-[11px] text-white/70 leading-relaxed font-medium">
+                {data.workflow.process}
+              </p>
             </div>
           </div>
 
           {/* Output */}
-          <div className="flex flex-col gap-2.5 p-5 rounded-2xl bg-black/50 border border-white/10 hover:bg-black/60 transition-all duration-300 group/item shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-[var(--color-accent-teal)] opacity-40" />
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 p-4.5 rounded-2xl bg-black/20 border border-white/8 hover:bg-black/30 transition-all duration-300 group/item shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-[var(--color-accent-teal)] opacity-30" />
+            <div className="flex items-center gap-2 mb-1">
               <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent-teal)] shadow-[0_0_8px_var(--color-accent-teal)]" />
               <span className="text-[var(--color-accent-teal)] font-black text-[9px] uppercase tracking-widest opacity-80 group-hover/item:opacity-100 transition-opacity">Result / Output</span>
             </div>
             <div className="pl-3.5 border-l border-white/10">
-              <SafeJsonView value={data.workflow.output} />
+              <p className="text-[11px] text-white/60 leading-relaxed font-medium">
+                {(() => {
+                   const lastAction = [...(data.nodes || [])].reverse().find(n => n.type === 'action' || n.type === 'monitor');
+                   return lastAction?.description || "Final resulting state of the automated process.";
+                })()}
+              </p>
             </div>
           </div>
         </div>
       </Card>
+
 
       {/* Graph Section */}
       <div
@@ -425,12 +435,12 @@ function SafeJsonView({ value, className }: { value: any, className?: string }) 
 
 function Card({ title, icon, children, className }: { title: string, icon: React.ReactNode, children: React.ReactNode, className?: string }) {
   return (
-    <div className={`glass-panel p-4 sm:p-6 bg-black/30 backdrop-blur-3xl border border-white/10 shadow-[0_32px_64px_rgba(0,0,0,0.6)] transition-all duration-500 flex flex-col group/card ${className}`}>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover/card:bg-white/10 transition-colors shadow-lg">
+    <div className={`glass-panel p-4 sm:p-5 bg-black/20 backdrop-blur-3xl border border-white/8 shadow-[0_16px_48px_rgba(0,0,0,0.4)] transition-all duration-500 flex flex-col group/card ${className}`}>
+      <div className="flex items-center gap-2.5 mb-5">
+        <div className="p-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover/card:bg-white/10 transition-colors shadow-lg">
           {icon}
         </div>
-        <h4 className="text-sm font-black text-white/90 tracking-tight uppercase tracking-[0.05em]">{title}</h4>
+        <h4 className="text-sm font-black text-white/80 tracking-tight uppercase tracking-[0.05em]">{title}</h4>
       </div>
       <div className="flex-1">{children}</div>
     </div>
@@ -445,34 +455,34 @@ function StatCell({ icon, value, label, color, accent }: { icon: React.ReactNode
     <div 
       onClick={() => isLong && setExpanded(!expanded)}
       className={cn(
-        "flex items-center gap-4 p-5 rounded-2xl bg-black/40 border border-white/10 hover:bg-black/50 hover:border-white/20 transition-all duration-300 relative overflow-hidden group",
+        "flex items-center gap-4 p-4 rounded-xl bg-black/15 border border-white/5 hover:bg-black/25 hover:border-white/15 transition-all duration-300 relative overflow-hidden group",
         isLong && "cursor-pointer"
       )}
     >
-      <div className={`absolute top-0 left-0 w-1 h-full opacity-60 ${accent} shadow-[0_0_15px_${accent === 'bg-green-500' ? 'rgba(34,197,94,0.4)' : 'rgba(168,85,247,0.4)'}]`} />
+      <div className={`absolute top-0 left-0 w-0.5 h-full opacity-40 ${accent}`} />
       
       {/* Icon Side */}
-      <div className="flex flex-col items-center justify-center w-12 shrink-0">
-        <div className={cn("p-2.5 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-white/50 group-hover:text-white transition-all shadow-xl mb-1", color)}>
+      <div className="flex flex-col items-center justify-center w-10 shrink-0">
+        <div className={cn("p-2 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center text-white/50 group-hover:text-white transition-all shadow-lg mb-0.5", color)}>
           {icon}
         </div>
-        <span className="text-[7px] font-black uppercase tracking-tighter text-white/20 group-hover:text-white/40 transition-colors">metric</span>
+        <span className="text-[6px] font-black uppercase tracking-tighter text-white/10 group-hover:text-white/20 transition-colors">metric</span>
       </div>
 
       {/* Separator */}
-      <div className="w-[1px] h-10 bg-white/5 shrink-0" />
+      <div className="w-[1px] h-8 bg-white/5 shrink-0" />
 
       {/* Content Side */}
-      <div className="flex flex-col gap-1 min-w-0 flex-1">
-        <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white/30 group-hover:text-white/50 transition-colors drop-shadow-sm">{label}</span>
+      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+        <span className="text-[9px] font-black uppercase tracking-[0.12em] text-white/30 group-hover:text-white/50 transition-colors">{label}</span>
         <div className={cn(
-          "text-[13px] font-bold text-white tracking-tight leading-relaxed transition-all duration-300",
+          "text-[12px] font-bold text-white tracking-tight leading-relaxed transition-all duration-300",
           !expanded && isLong && "line-clamp-2"
         )}>
           {typeof value === 'object' ? JSON.stringify(value) : value}
         </div>
         {!expanded && isLong && (
-          <span className="text-[8px] font-black text-purple-400/80 uppercase mt-0.5 animate-pulse">Click to expand</span>
+          <span className="text-[7px] font-black text-purple-400/60 uppercase mt-0.5 animate-pulse">Click to expand</span>
         )}
       </div>
     </div>
@@ -487,39 +497,40 @@ function ArchMetric({ icon, title, description, accent }: { icon: React.ReactNod
     <div 
       onClick={() => isLong && setExpanded(!expanded)}
       className={cn(
-        "flex items-start gap-4 p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-white/20 hover:bg-black/50 transition-all duration-300 group relative overflow-hidden",
+        "flex items-start gap-4 p-4 rounded-xl bg-black/15 border border-white/5 hover:border-white/15 hover:bg-black/25 transition-all duration-300 group relative overflow-hidden",
         isLong && "cursor-pointer"
       )}
     >
-      <div className={`absolute top-0 left-0 w-1 h-full opacity-60 ${accent}`} />
+      <div className={`absolute top-0 left-0 w-0.5 h-full opacity-40 ${accent}`} />
       
       {/* Icon Side */}
-      <div className="flex flex-col items-center justify-center w-12 shrink-0">
-        <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex-shrink-0 shadow-xl group-hover:bg-white/10 transition-all">
+      <div className="flex flex-col items-center justify-center w-10 shrink-0">
+        <div className="p-2 rounded-lg bg-white/5 border border-white/8 flex-shrink-0 shadow-lg group-hover:bg-white/10 transition-all">
           {icon}
         </div>
-        <span className="text-[7px] font-black uppercase tracking-tighter text-white/20 mt-1">arch</span>
+        <span className="text-[6px] font-black uppercase tracking-tighter text-white/10 mt-0.5">arch</span>
       </div>
 
       {/* Separator */}
-      <div className="w-[1px] h-10 bg-white/5 shrink-0 self-center" />
+      <div className="w-[1px] h-8 bg-white/5 shrink-0 self-center" />
 
       {/* Content Side */}
-      <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-        <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white/40 group-hover:text-white/60 transition-colors drop-shadow-sm">{title}</span>
+      <div className="flex flex-col gap-1 min-w-0 flex-1">
+        <span className="text-[9px] font-black uppercase tracking-[0.12em] text-white/30 group-hover:text-white/50 transition-colors">{title}</span>
         <div className={cn(
-          "text-[11px] text-white/60 leading-relaxed font-medium transition-all duration-300",
+          "text-[11px] text-white/50 leading-relaxed font-medium transition-all duration-300",
           !expanded && isLong && "line-clamp-2"
         )}>
           {typeof description === 'object' ? JSON.stringify(description) : description}
         </div>
         {!expanded && isLong && (
-          <span className="text-[8px] font-black text-blue-400/80 uppercase mt-0.5 animate-pulse">Click to explore</span>
+          <span className="text-[7px] font-black text-blue-400/60 uppercase mt-0.5 animate-pulse">Click to explore</span>
         )}
       </div>
     </div>
   )
 }
+
 
 
 function CodeBlock({ code }: { code: string }) {
