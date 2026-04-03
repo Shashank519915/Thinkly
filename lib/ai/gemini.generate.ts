@@ -1,4 +1,4 @@
-import { getGeminiClient } from "./gemini.client";
+import { getGeminiClient, GEMINI_MODEL } from "./gemini.client";
 import { getSystemInstruction } from "./promptBuilder";
 import { parseResponse } from "./responseParser";
 import { WorkflowResponse } from "@/types/workflow";
@@ -9,7 +9,7 @@ export async function generateWorkflowPlan(
 ): Promise<WorkflowResponse> {
   const genAI = getGeminiClient();
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
+    model: GEMINI_MODEL,
     systemInstruction: getSystemInstruction(),
   });
 

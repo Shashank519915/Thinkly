@@ -1,4 +1,4 @@
-import { getGeminiClient } from "./gemini.client";
+import { getGeminiClient, GEMINI_MODEL } from "./gemini.client";
 import {
   buildWorkflowContext,
   getChatSystemInstruction,
@@ -21,16 +21,16 @@ export async function askWorkflowChat(
 ): Promise<ChatResult> {
   const genAI = getGeminiClient();
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
+    model: GEMINI_MODEL,
     systemInstruction: getChatSystemInstruction(),
   });
 
   // ── History Preparation (Sliding Window: Last 10) ──────────────────────────
   const recentHistory = history.slice(-10);
   const historyContextStr = recentHistory.map(m => {
-      if (m.role === "user") return `User: ${m.content}`;
-      if (m.role === "patch") return `Assistant (Action): [Workflow Change Proposed] Summary: ${m.patch?.summary || m.content}`;
-      return `Assistant: ${m.content}`;
+    if (m.role === "user") return `User: ${m.content}`;
+    if (m.role === "patch") return `Assistant (Action): [Workflow Change Proposed] Summary: ${m.patch?.summary || m.content}`;
+    return `Assistant: ${m.content}`;
   }).join("\n");
 
   const baseWorkflowContext = buildWorkflowContext(workflow, originalPrompt);
@@ -39,30 +39,30 @@ export async function askWorkflowChat(
    * Helper function to execute a specific model call and parse/validate the patch.
    */
   async function attemptSelection(contextType: "compressed" | "full", feedback?: string): Promise<{ result: any; isValid: boolean; error?: string; prompt: string }> {
-    const contextContent = contextType === "compressed" 
-        ? `Structural Nodes JSON (Compressed):\n${buildStructuralContext(workflow)}`
-        : `Full Workflow JSON (High Precision):\n${JSON.stringify(workflow.nodes, null, 2)}`;
+    const contextContent = contextType === "compressed"
+      ? `Structural Nodes JSON (Compressed):\n${buildStructuralContext(workflow)}`
+      : `Full Workflow JSON (High Precision):\n${JSON.stringify(workflow.nodes, null, 2)}`;
 
     const prompt = [
-        baseWorkflowContext,
-        "",
-        "--- RECENT CHAT HISTORY (Last 10 turns) ---",
-        historyContextStr || "No previous history.",
-        "--- END HISTORY ---",
-        "",
-        contextContent,
-        feedback ? `\nCRITICAL ERROR in previous attempt: ${feedback}\nPlease fix the node IDs or connections and output ONLY the corrected JSON.` : "",
-        "",
-        `User Request: "${question}"`,
-        "",
-        "Generate the required JSON response.",
+      baseWorkflowContext,
+      "",
+      "--- RECENT CHAT HISTORY (Last 10 turns) ---",
+      historyContextStr || "No previous history.",
+      "--- END HISTORY ---",
+      "",
+      contextContent,
+      feedback ? `\nCRITICAL ERROR in previous attempt: ${feedback}\nPlease fix the node IDs or connections and output ONLY the corrected JSON.` : "",
+      "",
+      `User Request: "${question}"`,
+      "",
+      "Generate the required JSON response.",
     ].join("\n");
 
     const result = await model.generateContent(prompt);
     const unified = parseUnifiedResponse(result.response.text());
-    
+
     if (unified.mode !== "patch" || !unified.patch) {
-        return { result: unified, isValid: true, prompt }; // answers are inherently valid
+      return { result: unified, isValid: true, prompt }; // answers are inherently valid
     }
 
     const validation = validatePatch(unified.patch as WorkflowPatch, workflow);
@@ -73,7 +73,7 @@ export async function askWorkflowChat(
 
   if (useLessTokens) {
     // ── ECONOMICAL FLOW (Compressed -> Compressed+Error -> Full) ─────────────
-    
+
     // Attempt 1: Compressed
     console.log("[AI Agent] Stage 1: Compressed (useLessTokens=true)");
     const stage1 = await attemptSelection("compressed");
@@ -91,7 +91,7 @@ export async function askWorkflowChat(
 
   } else {
     // ── PREMIUM FLOW (Full -> Full+Error) ───────────────────────────────────
-    
+
     // Attempt 1: Full
     console.log("[AI Agent] Stage 1: Full (useLessTokens=false)");
     const stage1 = await attemptSelection("full");

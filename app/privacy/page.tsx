@@ -1,6 +1,7 @@
 import { ShieldCheck, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
+
 export default function PrivacyPolicy() {
   return (
     <div className="w-full h-screen overflow-y-auto relative z-10 pt-4 pb-24">

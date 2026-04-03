@@ -7,12 +7,15 @@ import { WorkflowPatch } from "./workflowPatcher";
  */
 export function buildStructuralContext(workflow: WorkflowResponse): string {
   const compressedNodes = workflow.nodes.map((node: WorkflowNode) => {
-    // 1. Initial essential fields
     const minimalNode: any = {
       id: node.id,
       type: node.type,
       label: node.label,
     };
+
+    if (node.tool) {
+      minimalNode.tool = node.tool;
+    }
 
     // 2. Add topological fields ONLY if they are not empty
     if (node.nextNodes && node.nextNodes.length > 0) {
@@ -106,6 +109,12 @@ export function validatePatch(patch: WorkflowPatch, currentWorkflow: WorkflowRes
     };
 
     if (op.op === "add_node") {
+        if (validNodeIds.has(op.node.id)) {
+            return { 
+                isValid: false, 
+                error: `Attempted to 'add_node' with ID '${op.node.id}', but this ID already exists in the graph. Please use a unique ID or use 'update_node'.` 
+            };
+        }
         const err = checkEdges(op.node.nextNodes, `new node '${op.node.id}'`) ||
                     checkEdges((op.node as any).falseNextNodes, `new node '${op.node.id}'`) ||
                     checkEdges((op.node as any).errorNodes, `new node '${op.node.id}'`);
