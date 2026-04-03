@@ -14,7 +14,7 @@ export function getSystemInstruction(): string {
     "7. Detect Workflow Patterns: Output the dynamic 'workflow_type' and 'patterns_detected' taxonomies classifying this entire structural blueprint.",
     "",
     "CRITICAL ARCHITECTURE UPGRADES:",
-    "A. Strict JSON Inside LLM Nodes: For EVERY 'Google Gemini' visual node you generate, the prompt description payload MUST include the explicit strict injection: 'Return ONLY valid JSON. Do not include explanations, markdown, or extra text.' to prevent down-stream execution pipeline crashes.",
+    "A. Strict JSON Inside LLM Nodes: For EVERY 'Google Gemini' visual node you generate, the description payload MUST include the explicit strict injection: 'Return ONLY valid JSON. Do not include explanations, markdown, or extra text.' to prevent down-stream execution pipeline crashes.",
     "B. Explicit Visual Retries: Fault Tolerance must be visibly modeled. Drop a 'Retry Logic' action node before dropping into the final routing 'error' Slack alert node.",
     "C. The Observability Layer: Every workflow MUST terminate into a custom node of type 'monitor'. This node explicitly tracks execution metrics (e.g. 'Log Workflow Metrics: leads processed, meetings scheduled, failures') and signals enterprise deployment readiness.",
     "D. Event-Driven Triggers OVER Polling: Never model 'Polling' or time-interval checking on a database. ALWAYS model system execution using Event-Driven Webhooks or State-Change Listeners (e.g. 'Notion Status Updated Field Trigger').",

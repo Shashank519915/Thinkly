@@ -1,5 +1,5 @@
 import { getGeminiClient, GEMINI_MODEL } from "./gemini.client";
-import { getSystemInstruction } from "./promptBuilder";
+import { getSystemInstruction } from "./prompts/factory";
 import { parseResponse } from "./responseParser";
 import { WorkflowResponse } from "@/types/workflow";
 

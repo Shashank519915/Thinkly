@@ -1,14 +1,5 @@
-/**
- * chatPromptBuilder.ts
- * Unified system instruction for the AI Agent.
- * Handles both conversational Q&A and surgical JSON patching.
- */
-
 import { WorkflowResponse } from "@/types/workflow"
 
-/**
- * Build the full context block injected into every chat message.
- */
 export function buildWorkflowContext(
   workflow: WorkflowResponse,
   originalPrompt: string
@@ -36,15 +27,6 @@ export function buildWorkflowContext(
   ].join("\n")
 }
 
-/**
- * Central System Instruction for the AI Agent.
- * 
- * This unified instruction directs Gemini to handle two distinct operational modes:
- *   1. ANSWER mode: Concise, technical Q&A about the provided workflow context.
- *   2. PATCH mode: Generating surgical JSON diffs for workflow modifications.
- * 
- * The agent uses semantic reasoning to select the correct mode based on user intent.
- */
 export function getChatSystemInstruction(): string {
   return [
     "You are the Thinkly Workflow Agent. You help users understand and modify their automation workflows.",

@@ -1,10 +1,6 @@
 import { WorkflowNode, WorkflowResponse } from "@/types/workflow";
-import { WorkflowPatch } from "./workflowPatcher";
+import { WorkflowPatch } from "../../workflowPatcher";
 
-/**
- * Strips non-essential descriptive properties from the workflow nodes.
- * Keeps only topological mapping data (ids, type, label) to save LLM tokens.
- */
 export function buildStructuralContext(workflow: WorkflowResponse): string {
   const compressedNodes = workflow.nodes.map((node: WorkflowNode) => {
     const minimalNode: any = {
@@ -17,7 +13,6 @@ export function buildStructuralContext(workflow: WorkflowResponse): string {
       minimalNode.tool = node.tool;
     }
 
-    // 2. Add topological fields ONLY if they are not empty
     if (node.nextNodes && node.nextNodes.length > 0) {
       minimalNode.nextNodes = node.nextNodes;
     }
@@ -34,8 +29,6 @@ export function buildStructuralContext(workflow: WorkflowResponse): string {
       minimalNode.errorNodes = errorNodes;
     }
 
-    // 3. Removed: description, tool, stage, apiEndpoint (Surgical Pruning)
-
     return minimalNode;
   });
 
@@ -47,25 +40,17 @@ export function buildStructuralContext(workflow: WorkflowResponse): string {
   return JSON.stringify(structuralContext, null, 2);
 }
 
-
 export interface ValidationResult {
   isValid: boolean;
   error?: string;
 }
 
-/**
- * Validates a generated WorkflowPatch against the current WorkflowResponse graph.
- * Fails if the LLM hallucinates non-existent node edges or targets fabricated nodes.
- */
 export function validatePatch(patch: WorkflowPatch, currentWorkflow: WorkflowResponse): ValidationResult {
   if (!patch.feasible) {
-      return { isValid: true }; // Feasible=false patches are inherently valid requests for aborts
+      return { isValid: true };
   }
 
-  // Set of all CURRENT valid node IDs
   const validNodeIds = new Set(currentWorkflow.nodes.map((n: WorkflowNode) => n.id));
-
-  // Determine all NEW node IDs added in this patch
   const newlyGeneratedIds = new Set<string>();
   for (const op of patch.operations) {
     if (op.op === "add_node" && op.node && op.node.id) {
@@ -73,10 +58,8 @@ export function validatePatch(patch: WorkflowPatch, currentWorkflow: WorkflowRes
     }
   }
 
-  // Combined set of all acceptable node targets during this patch lifecycle
   const acceptableNodeTargets = new Set([...validNodeIds, ...newlyGeneratedIds]);
 
-  // 1. Verify affected_nodes actually exist
   for (const affectedId of patch.affected_nodes) {
     if (!acceptableNodeTargets.has(affectedId)) {
         return { 
@@ -87,7 +70,6 @@ export function validatePatch(patch: WorkflowPatch, currentWorkflow: WorkflowRes
   }
 
   for (const op of patch.operations) {
-    // 2. Verify operations target valid nodes
     if (op.op === "update_node" || op.op === "remove_node") {
       if (!acceptableNodeTargets.has(op.nodeId)) {
         return { 
@@ -97,7 +79,6 @@ export function validatePatch(patch: WorkflowPatch, currentWorkflow: WorkflowRes
       }
     }
 
-    // 3. Verify newly requested edges connect to valid nodes
     const checkEdges = (edges: string[] | undefined, originNodeInfo: string) => {
         if (!edges) return null;
         for (const targetId of edges) {

@@ -2,11 +2,12 @@ import { getGeminiClient, GEMINI_MODEL } from "./gemini.client";
 import {
   buildWorkflowContext,
   getChatSystemInstruction,
-} from "./chatPromptBuilder";
+  buildStructuralContext,
+  validatePatch
+} from "./prompts/factory";
 import { parseUnifiedResponse } from "./responseParser";
 import { WorkflowPatch } from "./workflowPatcher";
 import { WorkflowResponse } from "@/types/workflow";
-import { buildStructuralContext, validatePatch } from "./compressedChatPromptBuilder";
 
 export type ChatResult =
   | { mode: "answer"; answer: string; stage?: number }
