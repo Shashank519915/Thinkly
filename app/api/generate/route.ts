@@ -3,7 +3,7 @@ import { generateWorkflowPlan } from "@/lib/ai/gemini";
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, history } = await req.json();
+    const { prompt, history, model } = await req.json();
 
     if (!prompt || typeof prompt !== "string") {
       return NextResponse.json(
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Call the Gemini pipeline
-    const workflowData = await generateWorkflowPlan(prompt, history || []);
+    const workflowData = await generateWorkflowPlan(prompt, history || [], model);
 
     return NextResponse.json({ success: true, data: workflowData });
   } catch (error: any) {

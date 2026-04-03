@@ -4,11 +4,12 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
   Sparkles, ArrowUp, ChevronDown, ChevronUp,
   CheckCircle2, X, AlertTriangle, Bot, User,
-  RefreshCw, Loader2
+  RefreshCw, Loader2, Terminal
 } from "lucide-react"
 import { WorkflowResponse } from "@/types/workflow"
 import { WorkflowPatch, mergeWorkflowPatch } from "@/lib/ai/workflowPatcher"
 import { supabase } from "@/lib/supabase/client"
+import { cn } from "@/lib/utils"
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -48,6 +49,7 @@ export function RefinementChat({
   const [loading, setLoading] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [useLessTokens, setUseLessTokens] = useState(false)
+  const [selectedModel, setSelectedModel] = useState("gemma-4-31b-it")
   const [error, setError] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -203,6 +205,7 @@ export function RefinementChat({
           workflow,
           originalPrompt,
           useLessTokens,
+          model: selectedModel,
           history: messages
             .slice(-10) // Limit to last 10 for performance and scope
             .map(m => ({ 
@@ -495,8 +498,30 @@ export function RefinementChat({
           </div>
         </div>
 
-        {/* ── Token Optimization Toggle ── */}
-        <div className="flex justify-end pr-4 mt-0.5">
+        {/* ── Model Selection + Token Optimization ── */}
+        <div className="flex justify-between items-center px-4 mt-0.5">
+          <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-black/20 border border-white/5 shadow-inner">
+            {[
+              { id: "gemini-2.5-flash", label: "Fast", icon: <Sparkles className="w-2.5 h-2.5" /> },
+              { id: "gemma-4-31b-it", label: "Strict", icon: <Terminal className="w-2.5 h-2.5" /> }
+            ].map(m => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setSelectedModel(m.id)}
+                className={cn(
+                  "px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5",
+                  selectedModel === m.id
+                    ? "bg-white/10 text-white shadow-sm"
+                    : "text-white/20 hover:text-white/40"
+                )}
+              >
+                {m.icon}
+                {m.label}
+              </button>
+            ))}
+          </div>
+
           <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-white/40 hover:text-white/70 transition-colors">
             <input
               type="checkbox"
@@ -504,7 +529,7 @@ export function RefinementChat({
               onChange={e => setUseLessTokens(e.target.checked)}
               className="rounded-sm bg-black/40 border-white/20 text-[var(--color-accent-purple)] focus:ring-0 focus:ring-offset-0 transition-colors w-3 h-3"
             />
-            Use less tokens (Experimental structural context)
+            Use less tokens
           </label>
         </div>
       </form>

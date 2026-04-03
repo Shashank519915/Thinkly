@@ -317,20 +317,20 @@ export default function Home() {
     setActiveTab(tab)
   }
 
-  const handleGenerateClick = (text: string) => {
+  const handleGenerateClick = (text: string, model?: string) => {
     if (!text.trim()) return
     setMessages([{ role: "user", parts: [{ text }] }])
-    executeGeneration(text, [], text)
+    executeGeneration(text, [], text, model)
   }
 
-  const handleRefineClick = (text: string) => {
+  const handleRefineClick = (text: string, model?: string) => {
     if (!text.trim() || !data) return
     const newHistory = [
       ...messages,
       { role: "model", parts: [{ text: JSON.stringify(data) }] }
     ]
     setMessages([...newHistory, { role: "user", parts: [{ text }] }])
-    executeGeneration(text, newHistory, meta?.prompt ?? text)
+    executeGeneration(text, newHistory, meta?.prompt ?? text, model)
   }
 
 
@@ -350,7 +350,7 @@ export default function Home() {
     setMessages([])
   }
 
-  const executeGeneration = async (text: string, history: any[] = [], originalPrompt: string) => {
+  const executeGeneration = async (text: string, history: any[] = [], originalPrompt: string, model?: string) => {
     setLoading(true)
     setError(null)
     setData(null)
@@ -360,7 +360,7 @@ export default function Home() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: text, history })
+        body: JSON.stringify({ prompt: text, history, model })
       })
       const result = await res.json()
 

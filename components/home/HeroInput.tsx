@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Sparkles, RefreshCw, ArrowRight, ArrowLeft, CheckCircle2, Clock, Users, Zap, Calendar } from "lucide-react"
+import { Sparkles, RefreshCw, ArrowRight, ArrowLeft, CheckCircle2, Clock, Users, Zap, Calendar, Terminal } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import BlurText from "@/components/ui/BlurText"
@@ -19,7 +19,7 @@ const PLACEHOLDER_EXAMPLES = [
   "e.g. Sync new Shopify orders to a Discord channel and update inventory in Airtable..."
 ]
 
-export function HeroInput({ onGenerate, loading }: { onGenerate: (text: string) => void, loading?: boolean }) {
+export function HeroInput({ onGenerate, loading }: { onGenerate: (text: string, model?: string) => void, loading?: boolean }) {
   const [step, setStep] = useState(1)
 
   // Form State
@@ -29,6 +29,7 @@ export function HeroInput({ onGenerate, loading }: { onGenerate: (text: string) 
   const [triggerCondition, setTriggerCondition] = useState("")
   const [hours, setHours] = useState("5")
   const [teamSize, setTeamSize] = useState("1-5")
+  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash")
 
   // Rotating Placeholder Logic
   const [placeholderIndex, setPlaceholderIndex] = useState(0)
@@ -76,7 +77,7 @@ export function HeroInput({ onGenerate, loading }: { onGenerate: (text: string) 
       trigger: { type: triggerType, condition: triggerCondition || "Always" },
       currentFriction: { hoursPerWeek: hours, teamSize }
     }
-    onGenerate(JSON.stringify(payload, null, 2))
+    onGenerate(JSON.stringify(payload, null, 2), selectedModel)
   }
 
   const toggleTool = (tool: string) => {
@@ -301,46 +302,46 @@ export function HeroInput({ onGenerate, loading }: { onGenerate: (text: string) 
                         <BlurText text="Define your current ROI baseline." className="text-[13px] text-white/50 mb-3" delay={30} animateBy="words" />
 
                         <div className="space-y-6">
-                          <div>
-                            <div className="flex items-center justify-between mb-3">
-                              <label className="text-[12px] font-bold text-white/90 flex items-center gap-2 uppercase tracking-tight">
-                                <Clock className="w-4 h-4 text-[var(--color-accent-blue)]" />
-                                Hours lost per week
-                              </label>
-                              <span className="text-[var(--color-accent-blue)] font-black bg-[var(--color-accent-blue)]/10 px-3 py-1 rounded-full text-[12px] tabular-nums">{hours}H</span>
-                            </div>
-                            <input
-                              type="range"
-                              min="0" max="40" step="1"
-                              value={hours}
-                              onChange={e => setHours(e.target.value)}
-                              className="w-full accent-[var(--color-accent-blue)] h-2 bg-white/5 rounded-full appearance-none outline-none cursor-pointer"
-                            />
-                          </div>
+                           <div>
+                             <div className="flex items-center justify-between mb-3">
+                               <label className="text-[12px] font-bold text-white/90 flex items-center gap-2 uppercase tracking-tight">
+                                 <Clock className="w-4 h-4 text-[var(--color-accent-blue)]" />
+                                 Hours lost per week
+                               </label>
+                               <span className="text-[var(--color-accent-blue)] font-black bg-[var(--color-accent-blue)]/10 px-3 py-1 rounded-full text-[12px] tabular-nums">{hours}H</span>
+                             </div>
+                             <input
+                               type="range"
+                               min="0" max="40" step="1"
+                               value={hours}
+                               onChange={e => setHours(e.target.value)}
+                               className="w-full accent-[var(--color-accent-blue)] h-2 bg-white/5 rounded-full appearance-none outline-none cursor-pointer"
+                             />
+                           </div>
 
-                          <div>
-                            <label className="text-[12px] font-bold text-white/90 flex items-center gap-2 mb-3 uppercase tracking-tight">
-                              <Users className="w-4 h-4 text-[var(--color-accent-purple)]" />
-                              Team Size Impacted
-                            </label>
-                            <div className="flex flex-wrap gap-2">
-                              {["Solo", "2-5", "6-20", "20+"].map(size => (
-                                <button
-                                  key={size}
-                                  onClick={() => setTeamSize(size)}
-                                  className={cn(
-                                    "px-4 py-2 rounded-xl border text-[12px] font-bold transition-all",
-                                    teamSize === size
-                                      ? "bg-[var(--color-accent-purple)]/20 border-[var(--color-accent-purple)]/50 text-white shadow-lg"
-                                      : "bg-black/10 border-white/10 text-white/40 hover:text-white"
-                                  )}
-                                >
-                                  {size}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
+                           <div>
+                             <label className="text-[12px] font-bold text-white/90 flex items-center gap-2 mb-3 uppercase tracking-tight">
+                               <Users className="w-4 h-4 text-[var(--color-accent-purple)]" />
+                               Team Size Impacted
+                             </label>
+                             <div className="flex flex-wrap gap-2">
+                               {["Solo", "2-5", "6-20", "20+"].map(size => (
+                                 <button
+                                   key={size}
+                                   onClick={() => setTeamSize(size)}
+                                   className={cn(
+                                     "px-4 py-2 rounded-xl border text-[12px] font-bold transition-all",
+                                     teamSize === size
+                                       ? "bg-[var(--color-accent-purple)]/20 border-[var(--color-accent-purple)]/50 text-white shadow-lg"
+                                       : "bg-black/10 border-white/10 text-white/40 hover:text-white"
+                                   )}
+                                 >
+                                   {size}
+                                 </button>
+                               ))}
+                             </div>
+                           </div>
+                         </div>
                       </div>
                     )}
                   </motion.div>
@@ -348,32 +349,58 @@ export function HeroInput({ onGenerate, loading }: { onGenerate: (text: string) 
 
                 {/* NAVIGATION FOOTER */}
                 <div className="h-[74px] px-8 flex justify-between items-center bg-white/[0.02] border-t border-white/10 shrink-0">
-                  {step > 1 ? (
-                    <button
-                      onClick={handlePrev}
-                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all font-bold text-sm border border-transparent hover:border-white/10 active:scale-95"
-                    >
-                      <ArrowLeft className="w-4 h-4" /> Back
-                    </button>
-                  ) : <div />}
+                  <div className="flex-1 flex justify-start">
+                    {step > 1 && (
+                      <button
+                        onClick={handlePrev}
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all font-bold text-sm border border-transparent hover:border-white/10 active:scale-95"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Back
+                      </button>
+                    )}
+                  </div>
 
-                  {step < 4 ? (
-                    <button
-                      onClick={handleNext}
-                      disabled={!objective.trim() && step === 1}
-                      className="flex items-center gap-2 px-8 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-black text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 shadow-lg active:scale-95"
-                    >
-                      Next <ArrowRight className="w-4 h-4" />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleSubmit}
-                      className="flex items-center gap-3 bg-gradient-to-r from-[var(--color-accent-purple)] to-[var(--color-accent-blue)] hover:from-[var(--color-accent-purple)]/90 hover:to-[var(--color-accent-blue)]/90 text-white px-10 py-3 rounded-xl font-black text-sm transition-all shadow-[0_4px_20px_rgba(167,139,250,0.3)] hover:shadow-[0_0_30px_rgba(167,139,250,0.6)] hover:scale-105 active:scale-95 group"
-                    >
-                      <Sparkles className="w-4 h-4 group-hover:animate-spin" />
-                      AUTOMATE
-                    </button>
-                  )}
+                  {/* Model Selector Pill */}
+                  <div className="px-1.5 py-1.5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-1 shadow-inner">
+                    {[
+                      { id: "gemini-2.5-flash", label: "Fast", icon: <Sparkles className="w-3 h-3" /> },
+                      { id: "gemma-4-31b-it", label: "Strict", icon: <Terminal className="w-3 h-3" /> }
+                    ].map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => setSelectedModel(m.id)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group/m",
+                          selectedModel === m.id
+                            ? "bg-white/10 text-white shadow-lg"
+                            : "text-white/20 hover:text-white/40"
+                        )}
+                      >
+                        <div className={cn("transition-transform", selectedModel === m.id ? "scale-110" : "scale-100")}>{m.icon}</div>
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex-1 flex justify-end">
+                    {step < 4 ? (
+                      <button
+                        onClick={handleNext}
+                        disabled={!objective.trim() && step === 1}
+                        className="flex items-center gap-2 px-8 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-black text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 shadow-lg active:scale-95"
+                      >
+                        Next <ArrowRight className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleSubmit}
+                        className="flex items-center gap-3 bg-gradient-to-r from-[var(--color-accent-purple)] to-[var(--color-accent-blue)] hover:from-[var(--color-accent-purple)]/90 hover:to-[var(--color-accent-blue)]/90 text-white px-10 py-3 rounded-xl font-black text-sm transition-all shadow-[0_4px_20px_rgba(167,139,250,0.3)] hover:shadow-[0_0_30px_rgba(167,139,250,0.6)] hover:scale-105 active:scale-95 group"
+                      >
+                        <Sparkles className="w-4 h-4 group-hover:animate-spin" />
+                        AUTOMATE
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>

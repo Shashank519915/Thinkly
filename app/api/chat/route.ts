@@ -4,7 +4,7 @@ import { WorkflowResponse } from "@/types/workflow"
 
 export async function POST(req: NextRequest) {
   try {
-    const { question, workflow, originalPrompt, history, useLessTokens } = await req.json()
+    const { question, workflow, originalPrompt, history, useLessTokens, model } = await req.json()
 
     if (!question || typeof question !== "string") {
       return NextResponse.json({ error: "Invalid question." }, { status: 400 })
@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
       workflow as WorkflowResponse,
       originalPrompt ?? "",
       history ?? [],
-      useLessTokens === true
+      useLessTokens === true,
+      model
     )
 
     return NextResponse.json({ success: true, ...result })

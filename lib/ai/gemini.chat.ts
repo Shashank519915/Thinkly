@@ -18,12 +18,13 @@ export async function askWorkflowChat(
   workflow: WorkflowResponse,
   originalPrompt: string,
   history: { role: string; content: string; patch?: WorkflowPatch }[] = [],
-  useLessTokens: boolean = false
+  useLessTokens: boolean = false,
+  modelName: string = GEMINI_MODEL
 ): Promise<ChatResult> {
   const genAI = getGeminiClient();
   const model = genAI.getGenerativeModel({
-    model: GEMINI_MODEL,
-    systemInstruction: getChatSystemInstruction(),
+    model: modelName,
+    systemInstruction: getChatSystemInstruction(modelName),
   });
 
   // ── History Preparation (Sliding Window: Last 10) ──────────────────────────
@@ -34,14 +35,14 @@ export async function askWorkflowChat(
     return `Assistant: ${m.content}`;
   }).join("\n");
 
-  const baseWorkflowContext = buildWorkflowContext(workflow, originalPrompt);
+  const baseWorkflowContext = buildWorkflowContext(workflow, originalPrompt, modelName);
 
   /**
    * Helper function to execute a specific model call and parse/validate the patch.
    */
   async function attemptSelection(contextType: "compressed" | "full", feedback?: string): Promise<{ result: any; isValid: boolean; error?: string; prompt: string }> {
     const contextContent = contextType === "compressed"
-      ? `Structural Nodes JSON (Compressed):\n${buildStructuralContext(workflow)}`
+      ? `Structural Nodes JSON (Compressed):\n${buildStructuralContext(workflow, modelName)}`
       : `Full Workflow JSON (High Precision):\n${JSON.stringify(workflow.nodes, null, 2)}`;
 
     const prompt = [
@@ -66,7 +67,7 @@ export async function askWorkflowChat(
       return { result: unified, isValid: true, prompt }; // answers are inherently valid
     }
 
-    const validation = validatePatch(unified.patch as WorkflowPatch, workflow);
+    const validation = validatePatch(unified.patch as WorkflowPatch, workflow, modelName);
     return { result: unified, isValid: validation.isValid, error: validation.error, prompt };
   }
 

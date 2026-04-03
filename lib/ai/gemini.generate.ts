@@ -5,12 +5,13 @@ import { WorkflowResponse } from "@/types/workflow";
 
 export async function generateWorkflowPlan(
   userInput: string,
-  history: { role: string; parts: { text: string }[] }[] = []
+  history: { role: string; parts: { text: string }[] }[] = [],
+  modelName: string = GEMINI_MODEL
 ): Promise<WorkflowResponse> {
   const genAI = getGeminiClient();
   const model = genAI.getGenerativeModel({
-    model: GEMINI_MODEL,
-    systemInstruction: getSystemInstruction(),
+    model: modelName,
+    systemInstruction: getSystemInstruction(modelName),
   });
 
   let responseText = "";
