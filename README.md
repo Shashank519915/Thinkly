@@ -26,6 +26,7 @@ I evolved the prompt into **Thinkly**, an AI Workflow Copilot. Instead of just a
 [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Gemini](https://img.shields.io/badge/Google_Gemini-8E75C2?style=for-the-badge&logo=google-gemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
+[![Gemma](https://img.shields.io/badge/Gemma_4-31B-FF6B6B?style=for-the-badge&logo=google&logoColor=white)](https://huggingface.co/google/gemma-4-31b-it)
 
 ---
 
@@ -58,7 +59,7 @@ Built with React, GSAP, and Framer Motion, this design language focuses on **"Ac
 
 ---
 
-## Phase 3: Engineering Depth & AI Hardening
+## Phase 3: Engineering Depth & Industrial Hardening
 
 ### 1. The "Chatbot" Requirement: Meet the Refinement Agent
 While Thinkly generates full workflows, the **Chat Interface** remains a core pillar of the experience—fulfilling the original assignment's chatbot requirement in a highly specialized way.
@@ -71,21 +72,51 @@ While Thinkly generates full workflows, the **Chat Interface** remains a core pi
 ![Refinement Chat - Interactive System Modification](https://github.com/user-attachments/assets/0a875a6e-bd39-46e5-ab9e-e1f57c35e51c)
 ![Refinement Chat - Interactive System Modification](https://github.com/user-attachments/assets/546e6604-5a57-4c78-8d3b-5f6a7f2f0517)
 
-### 2. Robust AI Extraction (Response Hardening)
-LLMs occasionally hallucinate syntax. In `lib/ai/responseParser.ts`, I built a **Syntax Sanitizer Pipeline**:
-- **Markdown Stripping**: Automatically removes markdown code fences (` ```json `) to prevent `JSON.parse` failures.
-- **Concatenation Fixing**: I detected a common Gemini hallucination where it uses Javascript-style `+` concatenation inside JSON strings. My parser automatically merges these into single valid JSON strings before execution.
+### 2. The Intelligence Steering: Dynamic Model Factory
+Thinkly doesn't just use one model; it uses a **Strategic AI Factory** (`lib/ai/prompts/factory.ts`) to steer different architectural personas based on the user's priority.
 
-### 3. "Smart Injector" Technology
+### 1. Fast Mode (Gemini 2.5 Flash)
+- **Target**: High-speed, intuitive workflow generation.
+- **Strength**: Rapid DAG creation and creative processing.
+- **Defaults**: Used as the primary engine for initial hero-input generation.
+
+### 2. Strict Architect Mode (Gemma-4-31B-it)
+- **Target**: 100% Structural Precision & Industrial Hardening.
+- **Strength**: Specialized in surgical JSON accuracy, following strict "Industrial Framework" rules (SLAs, monitors, error-paths).
+- **Strategy**: Leverages a highly-hardened system prompt to ensure zero-tolerance architectural depth.
+
+---
+### 3. The Industrial Framework: SLAs & Observability
+True production workflows require more than a happy-path. Thinkly's engine now enforces an **Industrial Framework** for every blueprint:
+- **Mandatory Node Triad**: Every manual step is automatically modeled as a self-healing triad: `[Action: Wait] -> [Parallel SLA Alert] -> [Monitor: Audit Log]`.
+- **Fault-Tolerant Retries**: Every REST API operation is backed by a dedicated `Retry Logic` node with exponential backoff modeling.
+- **Enterprise Tool Inference**: The system automatically infers best-in-class SaaS tools (Salesforce, SendGrid, Datadog) based on the workflow's functional intent.
+
+![Model Selection UI Placeholder - Hero Input Toggle]
+![Model Selection UI Placeholder - Chat Refinement Toggle]
+
+### 4. Structural Resilience: The Balanced JSON Parser
+LLMs occasionally hallucinate conversational chatter along with their JSON. In `lib/ai/responseParser.ts`, I built a **Structural, Depth-Tracking Crawler** (`extractBalancedJSON`):
+- **Heuristic JSON Discovery**: Instead of fragile regex, the system uses a stack-based brace-balancing algorithm to isolate valid JSON blocks from model preambles.
+- **Collision-Proof Extracting**: It effectively filters out "Ghost Braces" and conversational chatter, ensuring 100% stability even when models deviate from instructions.
+- **Payload Escaping Discipline**: Formally enforces backslash-escaping for nested JSON strings inside `payload` fields, eliminating the most common cause of parsing crashes.
+
+### 5. "Smart Injector" Technology
 To make the AI feel "intelligent," the system must compensate for human error. 
 - **The Problem**: A user might prompt "Summary this email" but forget to link the actual email data variable.
 - **The Logic**: I built a detector that checks if the AI prompt is "data-starved." If it is, the system **automatically injects** the appropriate Gmail/Context payload into the prompt, ensuring the AI always has the context it needs to succeed.
 
-### 4. Human-In-The-Loop (HITL)
+### 6. Human-In-The-Loop (HITL)
 True automation isn't 100% autonomous—it requires trust. Every Thinkly blueprint is designed with **Human Review nodes**. 
 - **Example**: In a lead-qualifying workflow, the AI summarizes the lead but **pauses** the execution for a manual "Approval" before sending a high-stakes response.
 
 ![Graph Architecture](https://github.com/user-attachments/assets/994f6517-adb2-480f-9c9d-7627daa251b9)
+
+### 7. Hybrid Persistence: Local-First Guest Experience
+To ensure a **Zero-Friction** onboarding experience, Thinkly implements a hybrid storage architecture:
+- **LocalStorage (Guest Mode)**: Unauthenticated users can immediately start generating and interacting with workflows. Data is persisted in `window.localStorage`, allowing for instant utility without a mandatory sign-up barrier.
+- **Supabase Cloud Sync**: Once a user authenticates via Google OAuth, the system transparently synchronizes their local state to a permanent **Supabase PostgreSQL** instance. 
+- **Architectural Choice**: By using a "Local-First" approach, we maximize initial engagement while leveraging Supabase's **Row-Level Security (RLS)** and relational power for long-term user data integrity.
 
 ---
 
@@ -108,9 +139,12 @@ I utilized **Antigravity** and **Google Stitch** as my high-speed engineering pa
 - **Prompting Mastery (Role-Based & Negative Steering)**:
   - **In-App Logic**: I architected the `promptBuilder.ts` to enforce a "Senior Workflow Architect" persona on Gemini, using **Negative Prompting** to strictly forbid generic, non-agentic patterns (e.g., "NEVER use polling—always use event-driven triggers"). Well defined response format expectaions were provided in prompts like required response should be in a very specific strict JSON format.
   - **Development Strategy**: When directing **Antigravity**, I didn't just ask for features; I provided **Rich Architectural Context** and used **Role Explanation** to ensure the code followed production-grade principles. By using specific exclusion rules, I steered the AI away from "lazy" solutions and towards the sophisticated JSON-patching and vault-encryption models we adopted.
-- **Manual Refinement & Edge-Case Hardening**:
+**Manual Refinement & Edge-Case Hardening**:
   - While AI generated initial structures, I conducted **Rigorous Manual Testing** on the local dev server. This phase was essential for identifying and fixing subtle edge cases that static AI analysis often misses—such as the specialized regex for handling Gemini's JSON hallucinations and refining the OAuth token refresh lifecycle.
   - Majority of code was personally reviewed and refactored to maintain absolute architectural purity and system reliability.
+- **Industrial Hardening & Zero-Tolerance Parsing**:
+  - I migrated the parsing logic from static regex to a **Structural Deep Crawler** to handle conversational drift in smaller models like Gemma.
+  - I architected the **Mandatory Node Triad** pattern to ensure that the AI-generated "designs" are not just beautiful, but production-ready with proper monitoring and escalation paths.
 
 ---
 
