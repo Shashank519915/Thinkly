@@ -270,42 +270,42 @@ export function OutputCards({
       <Card title="Workflow Breakdown" icon={<GitBranch className="w-4 h-4 text-[var(--color-accent-purple)]" />}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* Input */}
-          <div className="flex flex-col gap-2 p-4.5 rounded-2xl bg-black/20 border border-white/8 hover:bg-black/30 transition-all duration-300 group/item shadow-lg relative overflow-hidden">
+          <div className="flex flex-col gap-2 p-4.5 rounded-2xl bg-black/35 border border-white/8 hover:bg-black/45 transition-all duration-300 group/item shadow-lg relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-[var(--color-accent-purple)] opacity-30" />
             <div className="flex items-center gap-2 mb-1">
               <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent-purple)] shadow-[0_0_8px_var(--color-accent-purple)]" />
               <span className="text-[var(--color-accent-purple)] font-black text-[9px] uppercase tracking-widest opacity-80 group-hover/item:opacity-100 transition-opacity">Input Data</span>
             </div>
             <div className="pl-3.5 border-l border-white/10">
-              <p className="text-[11px] text-white/50 leading-relaxed font-medium italic">
+              <p className="text-[11px] text-white/80 leading-relaxed font-medium">
                 {data.nodes?.[0]?.description || (typeof data.workflow.input === 'string' && !data.workflow.input.startsWith('{') ? data.workflow.input : "Input definition for this lifecycle.")}
               </p>
             </div>
           </div>
 
           {/* Process */}
-          <div className="flex flex-col gap-2 p-4.5 rounded-2xl bg-black/20 border border-white/8 hover:bg-black/30 transition-all duration-300 group/item shadow-lg relative overflow-hidden">
+          <div className="flex flex-col gap-2 p-4.5 rounded-2xl bg-black/35 border border-white/8 hover:bg-black/45 transition-all duration-300 group/item shadow-lg relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-[var(--color-accent-blue)] opacity-30" />
             <div className="flex items-center gap-2 mb-1">
               <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent-blue)] shadow-[0_0_8px_var(--color-accent-blue)]" />
               <span className="text-[var(--color-accent-blue)] font-black text-[9px] uppercase tracking-widest opacity-80 group-hover/item:opacity-100 transition-opacity">Core Process</span>
             </div>
             <div className="pl-3.5 border-l border-white/10">
-              <p className="text-[11px] text-white/70 leading-relaxed font-medium">
+              <p className="text-[11px] text-white/80 leading-relaxed font-medium">
                 {data.workflow.process}
               </p>
             </div>
           </div>
 
           {/* Output */}
-          <div className="flex flex-col gap-2 p-4.5 rounded-2xl bg-black/20 border border-white/8 hover:bg-black/30 transition-all duration-300 group/item shadow-lg relative overflow-hidden">
+          <div className="flex flex-col gap-2 p-4.5 rounded-2xl bg-black/35 border border-white/8 hover:bg-black/45 transition-all duration-300 group/item shadow-lg relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-[var(--color-accent-teal)] opacity-30" />
             <div className="flex items-center gap-2 mb-1">
               <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent-teal)] shadow-[0_0_8px_var(--color-accent-teal)]" />
               <span className="text-[var(--color-accent-teal)] font-black text-[9px] uppercase tracking-widest opacity-80 group-hover/item:opacity-100 transition-opacity">Result / Output</span>
             </div>
             <div className="pl-3.5 border-l border-white/10">
-              <p className="text-[11px] text-white/60 leading-relaxed font-medium">
+              <p className="text-[11px] text-white/80 leading-relaxed font-medium">
                 {(() => {
                    const lastAction = [...(data.nodes || [])].reverse().find(n => n.type === 'action' || n.type === 'monitor');
                    return lastAction?.description || "Final resulting state of the automated process.";
@@ -315,6 +315,7 @@ export function OutputCards({
           </div>
         </div>
       </Card>
+
 
 
       {/* Graph Section */}
@@ -435,12 +436,12 @@ function SafeJsonView({ value, className }: { value: any, className?: string }) 
 
 function Card({ title, icon, children, className }: { title: string, icon: React.ReactNode, children: React.ReactNode, className?: string }) {
   return (
-    <div className={`glass-panel p-4 sm:p-5 bg-black/20 backdrop-blur-3xl border border-white/8 shadow-[0_16px_48px_rgba(0,0,0,0.4)] transition-all duration-500 flex flex-col group/card ${className}`}>
+    <div className={`glass-panel p-4 sm:p-5 bg-black/35 backdrop-blur-3xl border border-white/8 shadow-[0_16px_48px_rgba(0,0,0,0.4)] transition-all duration-500 flex flex-col group/card ${className}`}>
       <div className="flex items-center gap-2.5 mb-5">
         <div className="p-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover/card:bg-white/10 transition-colors shadow-lg">
           {icon}
         </div>
-        <h4 className="text-sm font-black text-white/80 tracking-tight uppercase tracking-[0.05em]">{title}</h4>
+        <h4 className="text-sm font-black text-white/85 tracking-tight uppercase tracking-[0.05em]">{title}</h4>
       </div>
       <div className="flex-1">{children}</div>
     </div>
@@ -455,7 +456,7 @@ function StatCell({ icon, value, label, color, accent }: { icon: React.ReactNode
     <div 
       onClick={() => isLong && setExpanded(!expanded)}
       className={cn(
-        "flex items-center gap-4 p-4 rounded-xl bg-black/15 border border-white/5 hover:bg-black/25 hover:border-white/15 transition-all duration-300 relative overflow-hidden group",
+        "flex items-center gap-4 p-4 rounded-xl bg-black/30 border border-white/5 hover:bg-black/40 hover:border-white/15 transition-all duration-300 relative overflow-hidden group",
         isLong && "cursor-pointer"
       )}
     >
@@ -476,7 +477,7 @@ function StatCell({ icon, value, label, color, accent }: { icon: React.ReactNode
       <div className="flex flex-col gap-0.5 min-w-0 flex-1">
         <span className="text-[9px] font-black uppercase tracking-[0.12em] text-white/30 group-hover:text-white/50 transition-colors">{label}</span>
         <div className={cn(
-          "text-[12px] font-bold text-white tracking-tight leading-relaxed transition-all duration-300",
+          "text-[12px] font-bold text-white/85 tracking-tight leading-relaxed transition-all duration-300",
           !expanded && isLong && "line-clamp-2"
         )}>
           {typeof value === 'object' ? JSON.stringify(value) : value}
@@ -497,7 +498,7 @@ function ArchMetric({ icon, title, description, accent }: { icon: React.ReactNod
     <div 
       onClick={() => isLong && setExpanded(!expanded)}
       className={cn(
-        "flex items-start gap-4 p-4 rounded-xl bg-black/15 border border-white/5 hover:border-white/15 hover:bg-black/25 transition-all duration-300 group relative overflow-hidden",
+        "flex items-start gap-4 p-4 rounded-xl bg-black/30 border border-white/5 hover:border-white/15 hover:bg-black/40 transition-all duration-300 group relative overflow-hidden",
         isLong && "cursor-pointer"
       )}
     >
@@ -518,7 +519,7 @@ function ArchMetric({ icon, title, description, accent }: { icon: React.ReactNod
       <div className="flex flex-col gap-1 min-w-0 flex-1">
         <span className="text-[9px] font-black uppercase tracking-[0.12em] text-white/30 group-hover:text-white/50 transition-colors">{title}</span>
         <div className={cn(
-          "text-[11px] text-white/50 leading-relaxed font-medium transition-all duration-300",
+          "text-[11px] text-white/85 leading-relaxed font-medium transition-all duration-300",
           !expanded && isLong && "line-clamp-2"
         )}>
           {typeof description === 'object' ? JSON.stringify(description) : description}
@@ -530,6 +531,7 @@ function ArchMetric({ icon, title, description, accent }: { icon: React.ReactNod
     </div>
   )
 }
+
 
 
 
