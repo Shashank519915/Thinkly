@@ -37,6 +37,18 @@ export function parseResponse(rawText: string): WorkflowResponse {
     }
 
     const ensureString = (val: any) => typeof val === 'object' && val !== null ? JSON.stringify(val, null, 2) : String(val || '');
+    
+    // Defensive: Ensure graph edges are always arrays to prevent UI crashes (n.forEach is not a function)
+    const ensureArray = (val: any): string[] => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val.map(v => String(v));
+      if (typeof val === 'object') {
+        // Handle LLM hallucination: nextNodes as an object { "PASS": ["id"], "FAIL": ["id"] }
+        const values = Object.values(val).flatMap(v => Array.isArray(v) ? v.map(i => String(i)) : [String(v)]);
+        return Array.from(new Set(values));
+      }
+      return [String(val)];
+    };
 
     // Force strict nested scalar boundaries over hallucinated objects
     parsed.workflow.input = ensureString(parsed.workflow.input);
@@ -67,14 +79,31 @@ export function parseResponse(rawText: string): WorkflowResponse {
 
     if (parsed.workflow_type) parsed.workflow_type = ensureString(parsed.workflow_type);
     
-    parsed.nodes = parsed.nodes.map(n => ({
-      ...n,
-      label: ensureString(n.label),
-      stage: n.stage ? ensureString(n.stage) : undefined,
-      description: n.description ? ensureString(n.description) : "",
-      tool: n.tool ? ensureString(n.tool) : undefined,
-      apiEndpoint: n.apiEndpoint ? ensureString(n.apiEndpoint) : undefined
-    }));
+    parsed.nodes = parsed.nodes.map(n => {
+      // Recovery logic for conditional objects: if nextNodes is an object, split it
+      let nextNodes = n.nextNodes;
+      let falseNextNodes = (n as any).falseNextNodes;
+
+      if (n.type === 'condition' && typeof n.nextNodes === 'object' && !Array.isArray(n.nextNodes)) {
+        const obj = n.nextNodes as any;
+        const keys = Object.keys(obj);
+        // Map first key (e.g. PASS/YES) to nextNodes, second key (FAIL/NO) to falseNextNodes
+        nextNodes = obj[keys[0]] || [];
+        falseNextNodes = obj[keys[1]] || [];
+      }
+
+      return {
+        ...n,
+        label: ensureString(n.label),
+        stage: n.stage ? ensureString(n.stage) : undefined,
+        description: n.description ? ensureString(n.description) : "",
+        tool: n.tool ? ensureString(n.tool) : undefined,
+        apiEndpoint: n.apiEndpoint ? ensureString(n.apiEndpoint) : undefined,
+        nextNodes: ensureArray(nextNodes),
+        falseNextNodes: ensureArray(falseNextNodes),
+        errorNodes: ensureArray((n as any).errorNodes)
+      };
+    });
 
     return parsed;
   } catch (error: any) {
