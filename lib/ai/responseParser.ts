@@ -5,20 +5,40 @@ import { WorkflowResponse } from "@/types/workflow";
  * This is resilient to AI "chatter" before and after the JSON block.
  */
 function extractBalancedJSON(text: string): string | null {
-  // 1. First, check for markdown code blocks as they are the most explicit
+  // 1. Markdown code blocks are still the most explicit signal - check them first
   const jsonMarkdownMatch = text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
   if (jsonMarkdownMatch) return jsonMarkdownMatch[1];
 
-  // 2. Heuristic: Find all candidate blocks starting with { and ending with }
-  // We want the block that contains our mandatory keys (workflow_type or nodes)
+  // 2. Structural Crawl: Find all discrete, brace-balanced objects by tracking depth
   const candidates: string[] = [];
-  let startIdx = 0;
-  while ((startIdx = text.indexOf('{', startIdx)) !== -1) {
-    const endIdx = text.lastIndexOf('}');
-    if (endIdx > startIdx) {
-      candidates.push(text.substring(startIdx, endIdx + 1));
+  
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '{') {
+      let depth = 1;
+      let j = i + 1;
+      let inString = false;
+      let escape = false;
+
+      while (j < text.length && depth > 0) {
+        const char = text[j];
+        
+        if (escape) {
+          escape = false;
+        } else if (char === '\\') {
+          escape = true;
+        } else if (char === '"') {
+          inString = !inString;
+        } else if (!inString) {
+          if (char === '{') depth++;
+          else if (char === '}') depth--;
+        }
+        j++;
+      }
+
+      if (depth === 0) {
+        candidates.push(text.substring(i, j));
+      }
     }
-    startIdx++;
   }
 
   // Rank candidates by content: prioritize those with mandatory keys
@@ -31,11 +51,11 @@ function extractBalancedJSON(text: string): string | null {
   );
 
   if (validCandidates.length > 0) {
-    // Sort by length - usually the largest block containing the keys is the official output
+    // Sort by length - usually the largest valid block is the official output
     return validCandidates.sort((a, b) => b.length - a.length)[0];
   }
 
-  // Fallback to the largest possible block
+  // Fallback: If no structured blocks found, try the largest bounds as a last resort
   const firstOpen = text.indexOf('{');
   const lastClose = text.lastIndexOf('}');
   if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
