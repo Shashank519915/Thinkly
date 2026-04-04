@@ -156,6 +156,27 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
 
       setShowMigrationModal(false)
       setHasWorkflowsToMigrate(false)
+
+      // 3. Conclusive Local Cleanup: Purge all guest session data
+      try {
+        // Clear workflow history cache
+        localStorage.removeItem("thinkly_history")
+        
+        // Comprehensive Chat Sweep (Prefix-matched)
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith("thinkly_chat_")) {
+            localStorage.removeItem(key)
+          }
+        })
+
+        // Session Rotation: Purge old ID and generate a fresh one for future guest use
+        localStorage.removeItem("thinkly_guest_id")
+        const nextGuestId = crypto.randomUUID()
+        localStorage.setItem("thinkly_guest_id", nextGuestId)
+        setGuestId(nextGuestId)
+      } catch (err) {
+        console.warn("Local storage cleanup partial failure:", err)
+      }
     } catch (err) {
       console.error("Migration failed:", err)
     } finally {
