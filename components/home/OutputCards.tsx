@@ -149,8 +149,8 @@ export function OutputCards({
                 <CalendarDays className="w-3 h-3" />
                 {formattedDate}
               </span>
-              <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[9px] font-black text-white/85 tracking-widest uppercase leading-none">
-                ID: {workflowId}
+              <span className="flex items-center px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[9px] font-black text-white/85 tracking-widest uppercase leading-none max-w-[110px] sm:max-w-none overflow-hidden">
+                <span className="truncate whitespace-nowrap">ID: {workflowId}</span>
               </span>
             </div>
           </div>

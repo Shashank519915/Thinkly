@@ -182,7 +182,7 @@ export default function Home() {
   const showingOutput = appView === "output" && data
 
   return (
-    <div className="relative w-full h-full min-h-screen bg-black overflow-hidden">
+    <div className="relative w-full min-h-screen bg-black">
       <div className="fixed inset-0 pointer-events-none z-0">
         <FluidGlassBackground mode="lens" className="w-full h-full" />
       </div>
@@ -195,12 +195,12 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: isAppVisible ? 1 : 0 }} transition={{ duration: 1.5 }} className="flex flex-col h-screen w-full relative overflow-hidden bg-transparent z-10">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: isAppVisible ? 1 : 0 }} transition={{ duration: 1.5 }} className="flex flex-col w-full relative bg-transparent z-10">
         <div className="w-full px-4 flex-none z-20">
           <Header activeTab={activeTab} onTabChange={handleTabChange} onNewWorkflow={handleNewWorkflow} />
         </div>
 
-        <main className="flex-1 overflow-y-auto w-full relative z-10 pt-8" style={{ overflowX: 'clip' }}>
+        <main className="w-full relative z-10 pt-4 md:pt-8" style={{ overflowX: 'clip' }}>
           <AnimatePresence mode="wait">
             {showingOutput && (
               <motion.div key="output" initial={{ opacity: 0, scale: 0.96, y: 32 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 32 }} transition={{ type: "spring", damping: 22, stiffness: 110 }}>

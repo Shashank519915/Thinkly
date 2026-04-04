@@ -4,6 +4,20 @@ import { WorkflowResponse } from "@/types/workflow";
  * Structural, depth-tracking crawler that isolates all brace-balanced JSON objects.
  * Resilient to AI "chatter" and multiple JSON blocks in a single response.
  */
+export function normalizeAIJSON(text: string): string {
+  // 1. Handle unquoted negative template tags: : -{{...}} -> : "-{{...}}"
+  // 2. Handle unquoted positive template tags: : {{...}} -> : "{{...}}"
+  // This is a safety net for LLMs (like Gemini Flash) that hallucinate template values without quotes.
+  let clean = text;
+  
+  // Negative Template Tag Fix
+  clean = clean.replace(/:\s*(-?\{\{.*?\}\})(?=[ \t\n\r]*(?:[,}]|$))/g, (match, tag) => {
+    return `: "${tag}"`;
+  });
+
+  return clean;
+}
+
 export function extractAllJSONBlocks(text: string): string[] {
   // 1. Markdown code blocks are still the most explicit signal - check them first
   const jsonMarkdownMatches = Array.from(text.matchAll(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/g));
@@ -84,7 +98,8 @@ export function parseResponse(rawText: string): WorkflowResponse {
       throw new Error("Could not locate JSON structural bounds.");
     }
     
-    const parsed = JSON.parse(cleanText) as WorkflowResponse;
+    const normalized = normalizeAIJSON(cleanText);
+    const parsed = JSON.parse(normalized) as WorkflowResponse;
     
     const ensureString = (val: any) => typeof val === 'object' && val !== null ? JSON.stringify(val, null, 2) : String(val || '');
     const ensureArray = (val: any): string[] => {
@@ -154,7 +169,7 @@ export function parseUnifiedResponse(rawText: string): { mode: string; answer: s
     try {
         const cleanJSON = extractBalancedJSON(rawText);
         if (!cleanJSON) throw new Error("No JSON found");
-        return JSON.parse(cleanJSON);
+        return JSON.parse(normalizeAIJSON(cleanJSON));
     } catch {
         return { mode: "answer", answer: rawText.trim() };
     }

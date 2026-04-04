@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${inter.className} bg-[var(--color-background)] text-[var(--color-foreground)] antialiased min-h-screen flex selection:bg-[var(--color-accent-purple)]/30 overflow-hidden`}>
+      <body className={`${inter.className} bg-[var(--color-background)] text-[var(--color-foreground)] antialiased min-h-screen flex selection:bg-[var(--color-accent-purple)]/30`}>
         <FilmGrain />
         <LiquidGlassFilter />
         <WorkflowProvider>

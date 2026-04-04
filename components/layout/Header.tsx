@@ -62,7 +62,7 @@ export function Header({ activeTab, onTabChange, onNewWorkflow, className, ...pr
   ]
 
   return (
-    <header className={cn("mx-auto max-w-5xl w-full mt-6 mb-4 flex items-center justify-between px-6 py-3 relative z-[100]", className)} {...props}>
+    <header className={cn("mx-auto max-w-5xl w-full mt-0 sm:mt-6 mb-4 flex items-center justify-between px-6 py-3 relative z-[100]", className)} {...props}>
       <div className="flex items-center gap-4 shrink-0">
         <div className="relative">
           <h1 className="relative text-3xl font-bold tracking-tight text-white drop-shadow-sm leading-none">Thinkly</h1>

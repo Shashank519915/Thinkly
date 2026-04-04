@@ -25,6 +25,8 @@ export function getSystemInstruction(): string {
     "1. ONLY OUTPUT RAW JSON starting with {.",
     "2. NO JAVASCRIPT IN JSON STRINGS: Never use + concatenation or multiline syntax (like `...`) inside the logic or payload strings. Use single, pure, unwrapped JSON strings ONLY.",
     "3. Inside the 'nodes' array, construct a Directed Acyclic Graph (DAG) using the 'nextNodes', 'falseNextNodes', or 'errorNodes' targeting schemas.",
+    "4. ALWAYS enclose template tags `{{...}}` in double quotes, even when used as numeric or boolean values (e.g. `\"count\": \"{{$input.count}}\"` instead of `\"count\": {{$input.count}}`).",
+    "5. Use - before a quoted template if you need a negative value: `\"-{{$input.quantity}}\"`",
     "",
     "JSON STRUCTURE FORMAT:",
     "{",
