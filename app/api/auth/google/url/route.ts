@@ -9,7 +9,8 @@ export async function GET(req: Request) {
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google/callback`
   
   // Security Fix: Generate a cryptographically secure random string instead of raw userId
-  const oauthState = crypto.randomUUID()
+  // Bind the state to the userId to prevent session hijacking
+  const oauthState = `${crypto.randomUUID()}.${userId}`
   
   // Scopes for Sheet and Gmail
   const scopes = [

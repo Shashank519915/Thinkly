@@ -27,6 +27,15 @@ export function generateN8nSchema(nodes: WorkflowNode[]) {
     } else if (node.tool?.toLowerCase().includes("gemini") || node.tool?.toLowerCase().includes("ai")) {
       type = "n8n-nodes-base.googleGemini";
       parameters = { resource: "message", operation: "create", model: "models/gemini-1.5-pro", prompt: node.description };
+    } else if (node.tool?.toLowerCase().includes("notion") || node.label.toLowerCase().includes("notion")) {
+      type = "n8n-nodes-base.notion";
+      parameters = { resource: "databasePage", operation: "create", databaseId: "YOUR_NOTION_DB_ID" };
+    } else if (node.tool?.toLowerCase().includes("slack") || node.label.toLowerCase().includes("slack")) {
+      type = "n8n-nodes-base.slack";
+      parameters = { resource: "message", operation: "post", channel: "#general", text: node.description };
+    } else if (node.tool?.toLowerCase().includes("airtable") || node.label.toLowerCase().includes("airtable")) {
+      type = "n8n-nodes-base.airtable";
+      parameters = { resource: "record", operation: "create", baseId: "YOUR_BASE_ID", tableId: "YOUR_TABLE_NAME" };
     } else if (node.tool?.toLowerCase().includes("redis") || node.label.toLowerCase().includes("idempotency")) {
       type = "n8n-nodes-base.redis";
       parameters = { operation: "get", key: "={{$json.id}}" };

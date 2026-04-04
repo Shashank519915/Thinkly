@@ -28,6 +28,9 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL('/?error=invalid_state', req.url))
   }
 
+  // 1.1 Verify userId binding
+  const [nonce, stateUserId] = state.split('.')
+  
   try {
     // 2. Exchange code for tokens
     const clientId = process.env.GOOGLE_CLIENT_ID
@@ -57,8 +60,8 @@ export async function GET(req: Request) {
     // 3. Identify the user strictly via Session (no fake state fallbacks allowed!)
     const { data: { user } } = await supabase.auth.getUser()
     
-    if (!user) {
-      console.error("No user valid session found securely via cookies.")
+    if (!user || user.id !== stateUserId) {
+      console.error("OAuth session mismatch: State userId does not match session user.")
       return NextResponse.redirect(new URL('/?error=unauthorized_integration', req.url))
     }
 

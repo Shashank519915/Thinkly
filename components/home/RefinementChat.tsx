@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
   Sparkles, ArrowUp, ChevronDown, ChevronUp,
   CheckCircle2, X, AlertTriangle, Bot, User,
-  RefreshCw, Loader2, Terminal
+  RefreshCw, Loader2, Terminal, Zap
 } from "lucide-react"
 import { WorkflowResponse } from "@/types/workflow"
 import { WorkflowPatch, mergeWorkflowPatch } from "@/lib/ai/workflowPatcher"
@@ -49,6 +49,8 @@ export function RefinementChat({
   const [loading, setLoading] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [useLessTokens, setUseLessTokens] = useState(false)
+  const [showTokenTooltip, setShowTokenTooltip] = useState(false)
+  const [hoveredModel, setHoveredModel] = useState<string | null>(null)
   const [selectedModel, setSelectedModel] = useState("gemma-4-31b-it")
   const [error, setError] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -440,6 +442,7 @@ export function RefinementChat({
                 </div>
               )}
 
+
               <div ref={bottomRef} className="h-4 w-full flex-shrink-0" />
             </div>
           </motion.div>
@@ -449,21 +452,20 @@ export function RefinementChat({
       {/* ── Input Bar ── */}
       <form onSubmit={handleSubmit} className="pointer-events-auto w-full relative group z-10 flex flex-col gap-1.5">
         <div className={`absolute inset-0 bg-gradient-to-r from-[var(--color-accent-purple)]/30 to-[var(--color-accent-blue)]/30 rounded-full blur-xl transition-opacity duration-500 -z-10 ${expanded ? 'opacity-100' : 'opacity-0'}`} />
-        <div className="glass-panel relative rounded-[2rem] overflow-hidden flex items-center shadow-[0_8px_30px_rgba(0,0,0,0.8)] border border-white/10 group-focus-within:border-[var(--color-accent-purple)]/50 transition-all">
-          
-          {/* Absolute Dark Tint Underlay */}
-          <div className={`absolute inset-0 transition-colors duration-500 -z-10 pointer-events-none ${expanded ? 'bg-black/40' : 'bg-black/[0.25]'}`} />
-
-          <div className="relative z-10 flex items-end w-full p-2">
+        <div className={cn(
+          "glass-panel relative rounded-full flex items-center shadow-[0_8px_30px_rgba(0,0,0,0.8)] border border-white/10 group-focus-within:border-[var(--color-accent-purple)]/50 transition-all duration-500",
+          expanded ? "bg-black/40" : "bg-black/[0.25]"
+        )}>
+          <div className="relative z-10 flex items-center w-full p-2">
             {/* Expand/collapse toggle */}
             <button
               type="button"
               onClick={() => setExpanded(e => !e)}
-              className="ml-3 mr-1 mb-3 text-white/50 hover:text-white/90 transition-colors drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+              className="ml-2 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] flex items-center justify-center active:scale-95 shrink-0"
             >
               {expanded
-                ? <ChevronDown className="w-4 h-4" />
-                : <ChevronUp className="w-4 h-4" />
+                ? <ChevronDown className="w-5 h-5 shadow-sm" />
+                : <ChevronUp className="w-5 h-5 shadow-sm" />
               }
             </button>
             <textarea
@@ -479,16 +481,98 @@ export function RefinementChat({
                 }
               }}
               disabled={loading || disabled}
-              placeholder={messages.length > 0
-                ? "Ask another question..."
-                : "Ask about this workflow..."
-              }
-              className="flex-1 bg-transparent border-none text-white placeholder-white/40 font-medium focus:outline-none focus:ring-0 px-2 py-3 md:text-base resize-none scrollbar-hide min-h-[44px] max-h-32"
+              placeholder={messages.length > 0 ? "Ask another question..." : "Ask about this workflow..."}
+              className="flex-1 bg-transparent border-none text-white placeholder-white/40 font-medium focus:outline-none focus:ring-0 px-2 py-2 md:text-[13px] resize-none scrollbar-hide min-h-[44px] max-h-32"
             />
+
+            {/* Token Optimizer (Zap) */}
+            <div className="hidden md:block relative group/tooltip mx-1">
+              <label 
+                onMouseEnter={() => setShowTokenTooltip(true)}
+                onMouseLeave={() => setShowTokenTooltip(false)}
+                className={cn(
+                  "flex items-center justify-center p-2 rounded-full border transition-all cursor-pointer relative",
+                  useLessTokens 
+                    ? "bg-[var(--color-accent-purple)]/20 border-[var(--color-accent-purple)]/40 text-[var(--color-accent-purple)] shadow-[0_0_8px_rgba(168,85,247,0.2)]" 
+                    : "bg-white/5 border-white/5 text-white/20 hover:text-white/40"
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={useLessTokens}
+                  onChange={e => setUseLessTokens(e.target.checked)}
+                  className="hidden"
+                />
+                <Zap className="w-3.5 h-3.5" />
+              </label>
+
+              {/* Glass Tooltip */}
+              <AnimatePresence>
+                {showTokenTooltip && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.6)] pointer-events-none z-[100] whitespace-nowrap"
+                  >
+                    <div className="text-[8px] font-black uppercase tracking-[0.15em] text-white/90">
+                      Use Less Tokens
+                    </div>
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-black/90" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="hidden md:block w-[1px] h-6 bg-white/10 mx-1" />
+
+            {/* Model Selection Block (Desktop) */}
+            <div className="hidden md:flex flex-col gap-0.5 mx-1 mr-2 p-1 rounded-2xl bg-black/40 border border-white/10 relative shadow-inner">
+              {[
+                { id: "gemini-2.5-flash", label: "FAST", icon: <Sparkles className="w-2.5 h-2.5" /> },
+                { id: "gemma-4-31b-it", label: "STRICT", icon: <Terminal className="w-2.5 h-2.5" /> }
+              ].map(m => (
+                <div key={m.id} className="relative group/m-tooltip">
+                  <button
+                    type="button"
+                    onMouseEnter={() => setHoveredModel(m.id)}
+                    onMouseLeave={() => setHoveredModel(null)}
+                    onClick={() => setSelectedModel(m.id)}
+                    className={cn(
+                      "px-2.5 py-1.5 rounded-full text-[7px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 w-[72px]",
+                      selectedModel === m.id
+                        ? "bg-white/15 text-white shadow-[0_2px_10px_rgba(0,0,0,0.3)] border border-white/10"
+                        : "text-white/20 hover:text-white/40 border border-transparent"
+                    )}
+                  >
+                    {m.icon}
+                    {m.label}
+                  </button>
+
+                  {/* Model Tooltip */}
+                  <AnimatePresence>
+                    {hoveredModel === m.id && (
+                      <motion.div
+                        initial={{ opacity: 0, x: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: -4, scale: 0.98 }}
+                        className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.6)] pointer-events-none z-[100] whitespace-nowrap"
+                      >
+                        <div className="text-[8px] font-black uppercase tracking-[0.15em] text-white/90">
+                          {m.id}
+                        </div>
+                        <div className="absolute left-full top-1/2 -translate-y-1/2 border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent border-l-[4px] border-l-black/90" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))}
+            </div>
+
             <button
               type="submit"
               disabled={loading || disabled || !text.trim()}
-              className="p-3 ml-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-50 disabled:hover:bg-white/10 border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] flex items-center justify-center active:scale-95 mb-0.5"
+              className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-50 disabled:hover:bg-white/10 border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] flex items-center justify-center active:scale-95"
             >
               {loading
                 ? <Loader2 className="w-5 h-5 animate-spin" />
@@ -498,39 +582,96 @@ export function RefinementChat({
           </div>
         </div>
 
-        {/* ── Model Selection + Token Optimization ── */}
-        <div className="flex justify-between items-center px-4 mt-0.5">
-          <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-black/20 border border-white/5 shadow-inner">
+        {/* ── Mobile Selection Bar ── */}
+        <div className="flex md:hidden justify-between items-center px-4 mt-2">
+          <div className="flex items-center gap-1.5 p-1 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-[0_4px_15px_rgba(0,0,0,0.4)]">
             {[
               { id: "gemini-2.5-flash", label: "Fast", icon: <Sparkles className="w-2.5 h-2.5" /> },
               { id: "gemma-4-31b-it", label: "Strict", icon: <Terminal className="w-2.5 h-2.5" /> }
             ].map(m => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => setSelectedModel(m.id)}
-                className={cn(
-                  "px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5",
-                  selectedModel === m.id
-                    ? "bg-white/10 text-white shadow-sm"
-                    : "text-white/20 hover:text-white/40"
-                )}
-              >
-                {m.icon}
-                {m.label}
-              </button>
+              <div key={m.id} className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedModel(m.id)
+                    setHoveredModel(m.id)
+                    setTimeout(() => setHoveredModel(null), 2000)
+                  }}
+                  className={cn(
+                    "px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5",
+                    selectedModel === m.id
+                      ? "bg-white/10 text-white shadow-sm"
+                      : "text-white/20 hover:text-white/40"
+                  )}
+                >
+                  {m.icon}
+                  {m.label}
+                </button>
+
+                {/* Mobile Model Tooltip */}
+                <AnimatePresence>
+                  {hoveredModel === m.id && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-2.5 py-1.5 rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.6)] pointer-events-none z-[100] whitespace-nowrap"
+                    >
+                      <div className="text-[8px] font-black uppercase tracking-[0.15em] text-white/90">
+                        {m.id}
+                      </div>
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-black/90" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ))}
           </div>
 
-          <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-white/40 hover:text-white/70 transition-colors">
-            <input
-              type="checkbox"
-              checked={useLessTokens}
-              onChange={e => setUseLessTokens(e.target.checked)}
-              className="rounded-sm bg-black/40 border-white/20 text-[var(--color-accent-purple)] focus:ring-0 focus:ring-offset-0 transition-colors w-3 h-3"
-            />
-            Use less tokens
-          </label>
+          <div className="relative group/tooltip">
+            <label 
+              className={cn(
+                "flex items-center gap-2 p-1.5 px-3 rounded-lg border transition-all cursor-pointer relative",
+                useLessTokens 
+                  ? "bg-[var(--color-accent-purple)]/20 border-[var(--color-accent-purple)]/40 text-[var(--color-accent-purple)] shadow-[0_0_8px_rgba(168,85,247,0.2)]" 
+                  : "bg-black/20 border-white/5 text-white/20"
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={useLessTokens}
+                onChange={e => {
+                  setUseLessTokens(e.target.checked)
+                  // Only trigger tooltip on mobile when toggling ON
+                  if (e.target.checked) {
+                    setShowTokenTooltip(true)
+                    setTimeout(() => setShowTokenTooltip(false), 2000)
+                  }
+                }}
+                className="hidden"
+              />
+              <Zap className="w-3 h-3" />
+              <span className="text-[9px] font-black uppercase tracking-wider">TKN</span>
+            </label>
+
+            {/* Mobile Glass Tooltip */}
+            <AnimatePresence>
+              {showTokenTooltip && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-2.5 py-1.5 rounded-lg bg-black/90 backdrop-blur-xl border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.6)] pointer-events-none z-[100] whitespace-nowrap"
+                >
+                  <div className="text-[8px] font-black uppercase tracking-[0.15em] text-white/90">
+                    Use Less Tokens
+                  </div>
+                  {/* Centered Pointer */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-black/90" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </form>
     </div>

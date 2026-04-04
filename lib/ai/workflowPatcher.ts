@@ -5,6 +5,7 @@
  */
 
 import { WorkflowResponse, WorkflowNode } from "@/types/workflow"
+import { extractAllJSONBlocks } from "./responseParser"
 
 // ─── Patch types ──────────────────────────────────────────────────────────────
 
@@ -45,7 +46,6 @@ export function mergeWorkflowPatch(
       case "add_node": {
         const existing = result.nodes.find(n => n.id === op.node.id)
         if (existing) {
-          // Deduplicate: just update instead of crashing
           result.nodes = result.nodes.map(n => n.id === op.node.id ? { ...n, ...op.node } : n)
         } else {
           result.nodes = [...result.nodes, op.node]
@@ -54,9 +54,7 @@ export function mergeWorkflowPatch(
       }
 
       case "remove_node": {
-        // Remove the node
         result.nodes = result.nodes.filter(n => n.id !== op.nodeId)
-        // Scrub ID from all edge arrays in remaining nodes
         result.nodes = result.nodes.map(n => ({
           ...n,
           nextNodes:      (n.nextNodes ?? []).filter(id => id !== op.nodeId),
@@ -85,11 +83,6 @@ export function mergeWorkflowPatch(
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * Set a deeply nested field via dot-path string.
- * e.g. "workflow.input" sets result.workflow.input
- * Returns a new object — does not mutate.
- */
 function setNestedField<T extends object>(obj: T, path: string, value: unknown): T {
   const keys = path.split(".")
   const clone = { ...obj } as Record<string, any>
@@ -106,18 +99,27 @@ function setNestedField<T extends object>(obj: T, path: string, value: unknown):
 
 /**
  * Parse the raw Gemini text output into a WorkflowPatch.
- * Strips markdown fences if present.
+ * Uses the structural multi-block crawler to isolate operations reliably.
  */
 export function parsePatch(raw: string): WorkflowPatch {
-  const cleaned = raw
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/```\s*$/i, "")
-    .trim()
+  const jsonBlocks = extractAllJSONBlocks(raw)
+  if (!jsonBlocks || jsonBlocks.length === 0) {
+    throw new Error("Failed to extract valid JSON patch from AI response.")
+  }
 
-  const parsed = JSON.parse(cleaned)
+  // Attempt to find the specific block that looks like a patch
+  const parsedMap = jsonBlocks.map((b: string) => {
+    try {
+      return JSON.parse(b)
+    } catch {
+      return null
+    }
+  }).filter(Boolean)
 
-  // Normalise — Gemini sometimes omits feasible
+  const parsed = parsedMap.find((p: any) => Array.isArray(p.operations)) || parsedMap[0]
+
+  if (!parsed) throw new Error("No valid patch operations found in AI response.")
+
   if (parsed.feasible === undefined) parsed.feasible = true
   if (!Array.isArray(parsed.operations)) parsed.operations = []
   if (!Array.isArray(parsed.affected_nodes)) parsed.affected_nodes = []

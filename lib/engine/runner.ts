@@ -26,17 +26,18 @@ export class AutomationRunner {
   private edges: WorkflowEdge[];
   private logs: RunLog[] = [];
   private integrations: Record<string, string> = {};
+  private modelName: string;
 
   // Public for access within class logic
   private _triggerData: any = {};
   private _inputData: any = {};
 
-  constructor(instanceId: string, userId: string, nodes: WorkflowNode[], edges: WorkflowEdge[]) {
+  constructor(instanceId: string, userId: string, nodes: WorkflowNode[], edges: WorkflowEdge[], modelName: string = 'gemini-1.5-flash') {
     this.instanceId = instanceId;
-
     this.userId = userId;
     this.nodes = nodes;
     this.edges = edges;
+    this.modelName = modelName;
   }
 
   private async fetchIntegrations() {
@@ -228,15 +229,19 @@ export class AutomationRunner {
 
     // 3. Robust Resolver Helper
     const getValue = (path: string): any => {
-      // Handle conditional expressions like {{ $error ? ... : ... }}
-      // If it contains a `?`, evaluate it as a JS expression against the context.
+      // Security Fix: Removed 'new Function' to prevent RCE.
+      // We now handle basic truthy checks ($error ? a : b) via a safe internal parser.
       if (path.includes('?')) {
-        try {
-          const evalFunc = new Function('$error', '$trigger', '$ai', '$input', `return ${path.trim()}`);
-          return evalFunc(context['$error'], context['$trigger'], context['$ai'], context['$input']);
-        } catch (e) {
-          console.error("[Hydrator] Expression Eval Error:", e);
-          // Fallback to standard logic if eval fails
+        const match = path.match(/(.*?)\?(.*?):(.*)/);
+        if (match) {
+          const condition = match[1].trim();
+          const trueVal = match[2].trim();
+          const falseVal = match[3].trim();
+          
+          const conditionRes = getValue(condition);
+          const isTruthy = conditionRes && conditionRes !== "unknown" && conditionRes !== "n/a";
+          
+          return isTruthy ? getValue(trueVal) : getValue(falseVal);
         }
       }
 
@@ -324,9 +329,10 @@ export class AutomationRunner {
     const cleanPrompt = finalPrompt.replace(/<[^>]*>?/gm, '').substring(0, 10000);
     const systemInstruction = "You are an automated extraction engine. Always output ONLY raw JSON formatted exactly as requested. Do not wrap in markdown tags like ```json.";
 
+    console.log(`[AI Node] Executing with Model: ${this.modelName || 'gemini-1.5-flash'}`);
     console.log(`[AI Node] Prompt Sent to Gemini: ${cleanPrompt.substring(0, 200)}...`);
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.modelName || 'gemini-1.5-flash'}:generateContent?key=${geminiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

@@ -16,18 +16,17 @@ export default function FluidGlassBackground({ mode = 'lens', lensProps = {}, cl
     }, []);
 
     return (
-        <div className={`absolute inset-0 w-full h-full pointer-events-none -z-10 m-0 p-0 overflow-hidden ${className || ''}`}>
-            <div className="absolute inset-0 bg-black/40 z-10 pointer-events-none" />
+        <div className={`absolute inset-0 w-full h-full pointer-events-none z-[-1] m-0 p-0 overflow-hidden ${className || ''}`}>
+            <div className="absolute inset-0 bg-black/40 z-[1] pointer-events-none" />
             
-            {/* Background Film Grain Overlay for Visual Continuity */}
-            <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-[15] overflow-hidden">
-                <svg className="w-full h-full">
-                    <filter id="bg-grain">
-                        <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
-                        <feColorMatrix type="saturate" values="0" />
-                    </filter>
-                    <rect width="100%" height="100%" filter="url(#bg-grain)" />
-                </svg>
+            {/* Background Film Grain Overlay - Base stacking so it's behind all UI layers */}
+            <div className="fixed inset-0 pointer-events-none opacity-[0.045] z-[1] overflow-hidden">
+                <div 
+                    className="w-full h-full opacity-60 mix-blend-overlay" 
+                    style={{ 
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+                    }}
+                />
             </div>
 
             <Canvas camera={{ position: [0, 0, 20], fov: 15 }} gl={{ alpha: true, antialias: false, powerPreference: "high-performance" }}>

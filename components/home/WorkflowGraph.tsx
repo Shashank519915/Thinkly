@@ -224,7 +224,7 @@ export function WorkflowGraph({
   }, [])
 
   return (
-    <div className="w-full h-full min-h-[300px] relative">
+    <div className="w-full h-full min-h-[400px] relative">
       <ReactFlow
         nodes={layoutedNodes}
         edges={initialEdges}
@@ -233,7 +233,7 @@ export function WorkflowGraph({
         fitView
         onInit={onInit}
         proOptions={{ hideAttribution: true }}
-        style={{ background: 'transparent' }}
+        style={{ background: 'transparent', width: '100%', height: '100%' }}
       >
         <Background
           color="#8b5cf6"

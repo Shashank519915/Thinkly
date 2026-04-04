@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   description: "An AI operations architect that audits workflows, suggests automation, and defines deterministic logic.",
 };
 
+import { WorkflowProvider } from "@/components/providers/WorkflowProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -21,7 +23,9 @@ export default function RootLayout({
       <body className={`${inter.className} bg-[var(--color-background)] text-[var(--color-foreground)] antialiased min-h-screen flex selection:bg-[var(--color-accent-purple)]/30 overflow-hidden`}>
         <FilmGrain />
         <LiquidGlassFilter />
-        {children}
+        <WorkflowProvider>
+          {children}
+        </WorkflowProvider>
       </body>
     </html>
   );

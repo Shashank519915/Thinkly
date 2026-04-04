@@ -99,7 +99,28 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
     
     const extractFromValue = (val: any): string | null => {
       if (!val) return null;
-      if (typeof val === 'object') return val.objective || val.title || val.name || JSON.stringify(val).slice(0, 50);
+      
+      if (typeof val === 'object') {
+        // 1. Try standard keys
+        const standardKeys = ['objective', 'title', 'name', 'prompt', 'intent', 'message', 'description', 'task'];
+        for (const key of standardKeys) {
+          if (val[key] && typeof val[key] === 'string' && val[key].length > 4) return val[key];
+        }
+
+        // 2. Try to find the first "long-ish" string value that isn't a technical ID or type
+        const values = Object.values(val);
+        const firstGoodString = values.find(v => 
+          typeof v === 'string' && 
+          v.length > 5 && 
+          !v.includes('/') && 
+          !/^[0-9a-f-]{20,}$/.test(v)
+        );
+        if (firstGoodString) return firstGoodString as string;
+
+        // 3. Last resort for objects
+        return JSON.stringify(val).slice(0, 50);
+      }
+
       if (typeof val === 'string') {
         const trimmed = val.trim();
         if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
@@ -113,15 +134,16 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
       return String(val);
     };
 
-    // 1. Try input
-    const inputTitle = extractFromValue(wf.data?.workflow?.input);
-    if (inputTitle && inputTitle.length > 3) return inputTitle;
-
-    // 2. Try prompt
+    // 1. Try prompt first (original intent)
     const promptTitle = extractFromValue(wf.prompt);
     if (promptTitle && promptTitle.length > 3) return promptTitle;
+
+    // 2. Try input data
+    const inputTitle = extractFromValue(wf.data?.workflow?.input);
+    if (inputTitle && inputTitle.length > 3) return inputTitle;
     
-    return "Untitled Workflow";
+    // 3. Fallback to workflow type
+    return wf.workflow_type || wf.data?.workflow_type || "Untitled Workflow";
   }
 
   // Helper to extract unique tool components from a workflow
