@@ -10,8 +10,10 @@ export function normalizeAIJSON(text: string): string {
   // This is a safety net for LLMs (like Gemini Flash) that hallucinate template values without quotes.
   let clean = text;
   
-  // Negative Template Tag Fix
-  clean = clean.replace(/:\s*(-?\{\{.*?\}\})(?=[ \t\n\r]*(?:[,}]|$))/g, (match, tag) => {
+  // Negative/Unquoted Template Tag Fix
+  // Only targets colons preceded by a non-escaped quote (root-level JSON keys)
+  // This prevents mangling tags already inside of escaped JSON strings.
+  clean = clean.replace(/(?<=[^\\]"):\s*(-?\{\{.*?\}\})(?=[ \t\n\r]*(?:[,}]|$))/g, (match, tag) => {
     return `: "${tag}"`;
   });
 
