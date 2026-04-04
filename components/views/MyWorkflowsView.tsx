@@ -209,7 +209,7 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
               <div 
                 key={wf.id} 
                 onClick={() => onSelect(wf)}
-                className="group relative flex flex-col md:flex-row md:items-center gap-5 p-6 md:p-8 bg-black/40 hover:bg-black/60 backdrop-blur-3xl border border-white/5 hover:border-white/15 rounded-2xl cursor-pointer transition-all duration-500 shadow-[0_8px_32px_rgba(0,0,0,0.3)] overflow-hidden"
+                className="group relative flex flex-col md:flex-row md:items-center gap-4 md:gap-8 p-4 md:p-8 bg-black/40 hover:bg-black/60 backdrop-blur-3xl border border-white/5 hover:border-white/15 rounded-2xl cursor-pointer transition-all duration-500 shadow-[0_8px_32px_rgba(0,0,0,0.3)] overflow-hidden"
               >
                 {/* Left Elevation Glow */}
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500/0 via-blue-500/50 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-all duration-500" />
@@ -217,31 +217,34 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
                 {/* Bottom Interactive Glow */}
                 <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent group-hover:via-white/15 transition-all duration-500" />
 
-                {/* Date & Info */}
-                <div className="flex-none flex flex-col items-start md:items-center justify-center md:w-24 md:border-r md:border-white/10 md:pr-8">
+                {/* Date & Info (Desktop only Column) */}
+                <div className="hidden md:flex flex-none flex-col items-center justify-center md:w-24 md:border-r md:border-white/10 md:pr-8">
                   <span className="text-white/20 text-[9px] uppercase font-black tracking-[0.2em] mb-1.5 grayscale group-hover:grayscale-0 group-hover:text-blue-400/60 transition-all">Created</span>
                   <span className="text-white font-bold text-sm whitespace-nowrap tracking-tight">{dateStr}</span>
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 flex flex-col justify-center min-w-0">
-                  <div className="flex items-center gap-2.5 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span className="text-[9px] font-black text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/20 uppercase tracking-widest shadow-sm">
                       {wf.data.workflow_type || "General"}
+                    </span>
+                    <span className="md:hidden text-[9px] font-black text-white/40 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5 uppercase tracking-widest">
+                      {dateStr}
                     </span>
                     <span className="text-[9px] font-black text-white/30 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5 uppercase tracking-widest">
                       ID: {wf.id.toString().slice(-4)}
                     </span>
                   </div>
-                  <h4 className="text-white font-bold text-xl truncate pr-6 group-hover:text-blue-50 transition-colors tracking-tight">
+                  <h4 className="text-white font-bold text-lg md:text-xl truncate pr-6 group-hover:text-blue-50 transition-colors tracking-tight">
                     {getWorkflowTitle(wf)}
                   </h4>
                 </div>
 
-                {/* Stats & Tools */}
-                <div className="flex-none flex items-center gap-10 md:px-8">
+                {/* Stats & Tools & Actions (Mobile Unified Row) */}
+                <div className="flex-none flex flex-row items-center justify-between md:justify-end gap-4 md:gap-10 md:px-8 border-t md:border-t-0 border-white/5 pt-4 md:pt-0">
                   <div className="flex items-center gap-2">
-                    <div className="flex flex-col items-end">
+                    <div className="flex flex-col items-start md:items-end">
                       <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.2em] mb-1.5">Architecture</span>
                       <span className="text-white font-bold text-sm flex items-center gap-2 grayscale group-hover:grayscale-0 transition-all drop-shadow-md">
                         <Layers className="w-4 h-4 text-blue-400/80" />
@@ -250,6 +253,7 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
                     </div>
                   </div>
 
+                  {/* Desktop Integrations */}
                   <div className="hidden lg:flex flex-col items-end min-w-[120px]">
                     <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.2em] mb-2">Integrations</span>
                     <div className="flex -space-x-2.5">
@@ -266,19 +270,19 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
                       )}
                     </div>
                   </div>
-                </div>
 
-                {/* Actions */}
-                <div className="flex-none flex items-center justify-end gap-4 border-t md:border-t-0 md:border-l border-white/10 pt-5 md:pt-0 md:pl-8">
-                  <button 
-                    onClick={(e) => handleDelete(wf.id, e)} 
-                    className="p-3 rounded-2xl bg-white/0 hover:bg-red-500/10 text-white/20 hover:text-red-400 transition-all active:scale-90 border border-transparent hover:border-red-500/20"
-                    title="Delete Blueprint"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                  <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-400 transition-all shadow-xl active:scale-95">
-                    <ExternalLink className="w-5 h-5" />
+                  {/* Unified Actions Bar for Mobile/Tablet */}
+                  <div className="flex items-center gap-3 md:border-l md:border-white/10 md:pl-8">
+                    <button 
+                      onClick={(e) => handleDelete(wf.id, e)} 
+                      className="p-2.5 rounded-xl bg-white/0 hover:bg-red-500/10 text-white/20 hover:text-red-400 transition-all active:scale-90 border border-transparent hover:border-red-500/20"
+                      title="Delete Blueprint"
+                    >
+                      <Trash2 className="w-4.5 h-4.5" />
+                    </button>
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-400 transition-all shadow-xl active:scale-95">
+                      <ExternalLink className="w-4.5 h-4.5 md:w-5 md:h-5" />
+                    </div>
                   </div>
                 </div>
               </div>
