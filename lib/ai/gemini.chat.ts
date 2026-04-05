@@ -102,14 +102,16 @@ export async function askWorkflowChat(
     // Attempt 2: Full + Feedback
     console.log("[AI Agent] Stage 2: Full + Feedback");
     const stage2 = await attemptSelection("full", stage1.error);
-    if (stage2.isValid) return { ...stage2.result, stage: 2 };
+    if (stage2.isValid) return { ...stage2.result, stage: 2, answer: stage2.result.answer || "I have optimized the refined logic for you." };
   }
 
-  // ── FINAL FALLBACK ────────────────────────────────────────────────────────
+  // ── FINAL FALLBACK & SANITIZATION ──────────────────────────────────────────
   console.error("[AI Agent] All escalation steps failed validation.");
-  return {
-    mode: "answer",
+  const finalResult = {
+    mode: "answer" as const,
     answer: "⚠️ I'm having trouble applying these structural changes precisely. Our system detected a logic hallucination. Please try a simpler phrasing or wait a moment while we improve our graph repair engine.",
     stage: 4
   };
+
+  return finalResult;
 }

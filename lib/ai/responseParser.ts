@@ -170,8 +170,26 @@ export function parseResponse(rawText: string): WorkflowResponse {
 export function parseUnifiedResponse(rawText: string): { mode: string; answer: string; patch?: any } {
     try {
         const cleanJSON = extractBalancedJSON(rawText);
-        if (!cleanJSON) throw new Error("No JSON found");
-        return JSON.parse(normalizeAIJSON(cleanJSON));
+        if (!cleanJSON) {
+            return { mode: "answer", answer: rawText.trim() };
+        }
+
+        const parsed = JSON.parse(normalizeAIJSON(cleanJSON));
+
+        // Validation & Fallback: If AI returned a JSON object but not our chat envelope
+        // (common when models hallucinate that they should output the node directly)
+        if (!parsed.mode || (!parsed.answer && !parsed.patch)) {
+            return { 
+                mode: "answer", 
+                answer: typeof parsed === 'object' ? JSON.stringify(parsed, null, 2) : rawText.trim() 
+            };
+        }
+
+        return {
+            mode: parsed.mode || "answer",
+            answer: parsed.answer || (parsed.patch ? "I have prepared the following workflow adjustments for you." : ""),
+            patch: parsed.patch
+        };
     } catch {
         return { mode: "answer", answer: rawText.trim() };
     }
