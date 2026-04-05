@@ -6,6 +6,14 @@ import { MeshTransmissionMaterial, useFBO } from '@react-three/drei';
 import { easing } from 'maath';
 
 export default function FluidGlassBackground({ mode = 'lens', lensProps = {}, className }: any) {
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     useEffect(() => {
         const originalWarn = console.warn;
         console.warn = (...args) => {
@@ -29,16 +37,24 @@ export default function FluidGlassBackground({ mode = 'lens', lensProps = {}, cl
                 />
             </div>
 
-            <Canvas camera={{ position: [0, 0, 20], fov: 15 }} gl={{ alpha: true, antialias: false, powerPreference: "high-performance" }}>
+            <Canvas 
+                camera={{ position: [0, 0, 20], fov: 15 }} 
+                gl={{ 
+                    alpha: true, 
+                    antialias: !isMobile, 
+                    powerPreference: isMobile ? "low-power" : "high-performance" 
+                }}
+                dpr={isMobile ? [1, 1] : [1, 2]}
+            >
                 <ambientLight intensity={1.5} />
                 <directionalLight position={[10, 10, 10]} intensity={1} />
-                {mode === 'lens' && <Lens modeProps={lensProps} />}
+                {mode === 'lens' && <Lens isMobile={isMobile} modeProps={lensProps} />}
             </Canvas>
         </div>
     );
 }
 
-function AppleGradients() {
+function AppleGradients({ isMobile }: { isMobile?: boolean }) {
     const orb1 = useRef<THREE.Mesh>(null!);
     const orb2 = useRef<THREE.Mesh>(null!);
     const orb3 = useRef<THREE.Mesh>(null!);
@@ -48,6 +64,8 @@ function AppleGradients() {
     const mat2 = useRef<THREE.MeshBasicMaterial>(null!);
     const mat3 = useRef<THREE.MeshBasicMaterial>(null!);
     const mat4 = useRef<THREE.MeshBasicMaterial>(null!);
+
+    const segments = isMobile ? 16 : 32;
 
     useFrame((state) => {
         // We use explicit strict Math.sin/cos binding so the objects NEVER physics-drift off the monitor!
@@ -59,7 +77,6 @@ function AppleGradients() {
             orb1.current.position.y = 1.0 + Math.cos(t * 0.3) * 0.8;
             const scale = 1 + Math.sin(t * 0.6) * 0.2;
             orb1.current.scale.setScalar(scale);
-            // Throbs slowly from 0.1 to 0.9 depending on the sine wave!
             mat1.current.opacity = 0.5 + Math.sin(t * 0.5) * 0.4; 
         }
 
@@ -90,25 +107,23 @@ function AppleGradients() {
 
     return (
         <group position={[0, 0, -5]}>
-            {/* Soft, circular orbs that fade dynamically into each other. transparent depthWrite=false means no hard overlapping! */}
             <mesh ref={orb1} position={[-1.5, 1, 0]} frustumCulled={false}>
-                <sphereGeometry args={[3.0, 32, 32]} />
+                <sphereGeometry args={[3.0, segments, segments]} />
                 <meshBasicMaterial ref={mat1} color="#FF2A6D" transparent depthWrite={false} />
             </mesh>
             <mesh ref={orb2} position={[1.5, -1, -1]} frustumCulled={false}>
-                <sphereGeometry args={[3.5, 32, 32]} />
+                <sphereGeometry args={[3.5, segments, segments]} />
                 <meshBasicMaterial ref={mat2} color="#05D5FF" transparent depthWrite={false} />
             </mesh>
             <mesh ref={orb3} position={[0, 0, -2]} frustumCulled={false}>
-                <sphereGeometry args={[4.0, 32, 32]} />
+                <sphereGeometry args={[4.0, segments, segments]} />
                 <meshBasicMaterial ref={mat3} color="#5511B0" transparent depthWrite={false} />
             </mesh>
             <mesh ref={orb4} position={[-1.5, -1, -3]} frustumCulled={false}>
-                <sphereGeometry args={[2.5, 32, 32]} />
+                <sphereGeometry args={[2.5, segments, segments]} />
                 <meshBasicMaterial ref={mat4} color="#FF9500" transparent depthWrite={false} />
             </mesh>
 
-            {/* Dark background plate to mathematically guard FBO fallback pixels */}
             <mesh position={[0, 0, -10]} frustumCulled={false}>
                 <planeGeometry args={[150, 150]} />
                 <meshBasicMaterial color="#050505" />
@@ -120,16 +135,17 @@ function AppleGradients() {
 const ModeWrapper = memo(function ModeWrapper({
     geometryNode,
     followPointer = true,
+    isMobile = false,
     modeProps = {},
     ...props
-}: { geometryNode: ReactNode, followPointer?: boolean, modeProps?: Record<string, unknown> } & ThreeElements['mesh']) {
+}: { geometryNode: ReactNode, followPointer?: boolean, isMobile?: boolean, modeProps?: Record<string, unknown> } & ThreeElements['mesh']) {
     const ref = useRef<THREE.Mesh>(null!);
     const { size } = useThree();
 
-    // ✅ BIGGER FBO (This uses YOUR exact layout math that mathematically solved the edge sweep clipping!)
-    // Using TS-compliant args for older R3F versions: width, height, settings
-    const buffer = useFBO(size.width * 1.5, size.height * 1.5, {
-        samples: 4,
+    // Scale FBO resolution down for mobile
+    const resolutionScale = isMobile ? 0.75 : 1.5;
+    const buffer = useFBO(size.width * resolutionScale, size.height * resolutionScale, {
+        samples: isMobile ? 0 : 4,
     });
 
     const [scene] = useState(() => {
@@ -172,7 +188,7 @@ const ModeWrapper = memo(function ModeWrapper({
             {/* ✅ SCALED PORTAL (Overscans the background so the FBO has data entirely outside the frame!) */}
             {createPortal(
                 <group scale={1.5}>
-                    <AppleGradients />
+                    <AppleGradients isMobile={isMobile} />
                 </group>,
                 scene
             )}
@@ -184,6 +200,7 @@ const ModeWrapper = memo(function ModeWrapper({
                     ior={ior ?? 1.15}
                     thickness={thickness ?? 5}
                     anisotropy={anisotropy ?? 0.05}
+                    chromaticAberration={0.05}
                     clearcoat={1}
                     clearcoatRoughness={0.1}
                     roughness={0}
@@ -196,11 +213,12 @@ const ModeWrapper = memo(function ModeWrapper({
     );
 });
 
-function Lens({ modeProps, ...p }: { modeProps?: Record<string, unknown> } & ThreeElements['mesh']) {
+function Lens({ isMobile, modeProps, ...p }: { isMobile?: boolean, modeProps?: Record<string, unknown> } & ThreeElements['mesh']) {
     return (
         <ModeWrapper
             geometryNode={<cylinderGeometry args={[1, 1, 0.3, 64]} />}
             followPointer
+            isMobile={isMobile}
             modeProps={modeProps}
             {...p}
         />
