@@ -6,7 +6,7 @@ import { MeshTransmissionMaterial, useFBO } from '@react-three/drei';
 import { easing } from 'maath';
 
 export default function FluidGlassBackground({ mode = 'lens', lensProps = {}, className }: any) {
-    const [isMobile, setIsMobile] = useState(false);
+    const [isMobile, setIsMobile] = useState(true);
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
         checkMobile();

@@ -148,11 +148,13 @@ export function WorkflowGraph({
   runLogs = {},
 }: WorkflowGraphProps) {
   const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null)
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(true) // ✅ Mobile-First Initial State
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
     checkMobile()
+    setIsInitialized(true)
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
@@ -287,7 +289,12 @@ export function WorkflowGraph({
   }, [isMobile])
 
   return (
-    <div className="w-full h-full min-h-[400px] relative">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: isInitialized ? 1 : 0 }}
+      transition={{ duration: 0.5 }}
+      className="w-full h-full min-h-[400px] relative"
+    >
       <ReactFlow<AppNode, Edge>
         nodes={layoutedNodes}
         edges={initialEdges}
@@ -369,6 +376,6 @@ export function WorkflowGraph({
           </AnimatePresence>
         </div>
       </ReactFlow>
-    </div>
+    </motion.div>
   )
 }
