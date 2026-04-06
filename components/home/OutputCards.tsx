@@ -11,6 +11,7 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism"
 import { WorkflowGraph } from "./WorkflowGraph"
 import { generateN8nSchema } from "@/lib/export/n8n"
 import { supabase } from "@/lib/supabase/client"
+import { extractWorkflowTitle, extractWorkflowTools } from "@/lib/ai/utils"
 
 export function OutputCards({
   data,
@@ -107,6 +108,12 @@ export function OutputCards({
       alert("Please login to share your blueprints on the cloud!")
       return
     }
+    
+    const workflowName = extractWorkflowTitle(meta.prompt, data)
+    const extractedTools = extractWorkflowTools(data)
+    const nodeCount = data.nodes?.length || 0
+    const wfType = data.workflow_type || "General Automation"
+
     try {
       const { error } = await supabase.from('workflows').upsert({
         user_id: user.id,
@@ -114,7 +121,11 @@ export function OutputCards({
         data: data,
         id_temp: new Date(meta.generatedAt).getTime(),
         is_public: true,
-        created_at: meta.generatedAt
+        created_at: meta.generatedAt,
+        name: workflowName,
+        workflow_type: wfType,
+        node_count: nodeCount,
+        tools: extractedTools
       }, { onConflict: 'user_id,id_temp' })
       if (error) throw error
       const shareUrl = `${window.location.origin}?s=${new Date(meta.generatedAt).getTime()}`

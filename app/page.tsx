@@ -13,6 +13,7 @@ import { IntegrationsView } from "@/components/views/IntegrationsView"
 import { AutomationsView } from "@/components/views/AutomationsView"
 import { RefinementChat } from "@/components/home/RefinementChat"
 import { supabase } from "@/lib/supabase/client"
+import { extractWorkflowTitle, extractWorkflowTools } from "@/lib/ai/utils"
 import LoadingScreen from "@/components/ui/LoadingScreen"
 import { BottomBlurOverlay } from "@/components/ui/BottomBlurOverlay"
 import { useWorkflow } from "@/components/providers/WorkflowProvider"
@@ -124,12 +125,34 @@ export default function Home() {
     executeGeneration(text, newHistory, meta?.prompt ?? text, model)
   }
 
-  const handleWorkflowSelect = (wf: SavedWorkflow) => {
+  const handleWorkflowSelect = async (wf: SavedWorkflow) => {
     setActiveTab("My Workflows")
+    
+    // Check if we need to fetch the full data (lazy hydration)
+    if (!wf.data) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        const table = user ? 'workflows' : 'guest_workflows'
+        
+        const { data, error } = await supabase
+          .from(table)
+          .select('data')
+          .eq('id', wf.id)
+          .single()
+          
+        if (error) throw error
+        wf.data = data.data
+      } catch(err) {
+        console.error("Hydration error:", err)
+        alert("Failed to load full workflow details.")
+        return
+      }
+    }
+    
     setAppView("output")
-    setData(wf.data)
+    setData(wf.data!)
     setMeta({
-      title: wf.data.workflow_type ?? "Saved Workflow",
+      title: wf.name || wf.workflow_type || "Saved Workflow",
       prompt: wf.prompt,
       workflowId: wf.id_temp.toString(),
       generatedAt: wf.created_at,
@@ -165,12 +188,37 @@ export default function Home() {
         isOwner: true
       })
 
+      const workflowName = extractWorkflowTitle(originalPrompt, result.data)
+      const extractedTools = extractWorkflowTools(result.data)
+      const nodeCount = result.data.nodes?.length || 0
+      const wfType = result.data.workflow_type || "General Automation"
+
       if (user) {
-        await supabase.from('workflows').insert({ user_id: user.id, prompt: originalPrompt, data: result.data, created_at: now, id_temp: tempId })
+        await supabase.from('workflows').insert({ 
+          user_id: user.id, 
+          prompt: originalPrompt, 
+          data: result.data, 
+          created_at: now, 
+          id_temp: tempId,
+          name: workflowName,
+          workflow_type: wfType,
+          node_count: nodeCount,
+          tools: extractedTools
+        })
       } else if (guestId) {
         const existing = JSON.parse(localStorage.getItem("thinkly_history") || "[]")
-        localStorage.setItem("thinkly_history", JSON.stringify([{ id: tempId, prompt: originalPrompt, data: result.data, date: now }, ...existing]))
-        await supabase.from('guest_workflows').insert({ guest_id: guestId, prompt: originalPrompt, data: result.data, created_at: now, id_temp: tempId })
+        localStorage.setItem("thinkly_history", JSON.stringify([{ id: tempId, prompt: originalPrompt, data: result.data, date: now, name: workflowName, node_count: nodeCount, tools: extractedTools }, ...existing]))
+        await supabase.from('guest_workflows').insert({ 
+          guest_id: guestId, 
+          prompt: originalPrompt, 
+          data: result.data, 
+          created_at: now, 
+          id_temp: tempId,
+          name: workflowName,
+          workflow_type: wfType,
+          node_count: nodeCount,
+          tools: extractedTools
+        })
       }
     } catch (err: any) {
       setError(err.message.includes("API Key") ? "Missing API Key. Please add GEMINI_API_KEY to your .env.local file." : err.message)

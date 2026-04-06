@@ -142,7 +142,11 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
           prompt: wf.prompt,
           data: wf.data,
           id_temp: wf.id_temp,
-          created_at: wf.created_at
+          created_at: wf.created_at,
+          name: wf.name,
+          workflow_type: wf.workflow_type,
+          node_count: wf.node_count,
+          tools: wf.tools
         })))
         await supabase.from('guest_workflows').delete().eq('guest_id', guestId)
       }
