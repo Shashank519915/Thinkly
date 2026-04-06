@@ -187,7 +187,7 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
                 <div 
                   key={wf.id} 
                   onClick={() => onSelect(wf)}
-                  className="group relative flex flex-col md:flex-row md:items-center gap-4 md:gap-8 p-4 md:p-8 bg-black/40 hover:bg-black/60 backdrop-blur-3xl border border-white/5 hover:border-white/15 rounded-2xl cursor-pointer transition-all duration-500 shadow-[0_8px_32px_rgba(0,0,0,0.3)] overflow-hidden"
+                  className="group relative flex flex-col md:flex-row md:items-center gap-4 md:gap-8 p-4 md:p-5 bg-black/40 hover:bg-black/60 backdrop-blur-3xl border border-white/5 hover:border-white/15 rounded-2xl cursor-pointer transition-all duration-500 shadow-[0_8px_32px_rgba(0,0,0,0.3)] overflow-hidden"
                 >
                   {/* Left Elevation Glow */}
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500/0 via-blue-500/50 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-all duration-500" />
@@ -197,7 +197,7 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
 
                   {/* Date & Info (Desktop only Column) */}
                   <div className="hidden md:flex flex-none flex-col items-center justify-center md:w-24 md:border-r md:border-white/10 md:pr-8">
-                    <span className="text-white/20 text-[9px] uppercase font-black tracking-[0.2em] mb-1.5 grayscale group-hover:grayscale-0 group-hover:text-blue-400/60 transition-all">Created</span>
+                    <span className="text-white/20 text-[9px] uppercase font-black tracking-[0.2em] mb-2 leading-none grayscale group-hover:grayscale-0 group-hover:text-blue-400/60 transition-all">Created</span>
                     <span className="text-white font-bold text-sm whitespace-nowrap tracking-tight">{dateStr}</span>
                   </div>
 
@@ -256,18 +256,27 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
                       </div>
 
                       {/* Desktop Integrations (Hidden on Mobile) */}
-                      <div className="hidden lg:flex flex-col items-end min-w-[120px]">
-                        <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.2em] mb-2">Integrations</span>
+                      <div className="hidden lg:flex flex-col items-start min-w-[120px]">
+                        <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.2em] mb-2 leading-none">Integrations</span>
                         <div className="flex -space-x-2.5">
-                          {tools.length > 0 ? tools.map((tool, idx) => (
-                            <div 
-                              key={idx}
-                              className="w-8 h-8 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-[9px] font-black text-white/60 backdrop-blur-md shadow-2xl ring-2 ring-black group-hover:ring-zinc-800 transition-all"
-                              title={typeof tool === 'string' ? tool : 'Tool'}
-                            >
-                              {(typeof tool === 'string' ? tool.slice(0, 2) : '??').toUpperCase()}
-                        </div>
-                          )) : (
+                          {tools.length > 0 ? (
+                            <>
+                              {tools.slice(0, 4).map((tool, idx) => (
+                                <div 
+                                  key={idx}
+                                  className="w-8 h-8 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-[9px] font-black text-white/60 backdrop-blur-md shadow-2xl ring-2 ring-black group-hover:ring-zinc-800 transition-all"
+                                  title={typeof tool === 'string' ? tool : 'Tool'}
+                                >
+                                  {(typeof tool === 'string' ? tool.slice(0, 2) : '??').toUpperCase()}
+                                </div>
+                              ))}
+                              {tools.length > 4 && (
+                                <div className="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[9px] font-black text-blue-400 backdrop-blur-md ring-2 ring-black shadow-2xl">
+                                  +{tools.length - 4}
+                                </div>
+                              )}
+                            </>
+                          ) : (
                             <div className="text-white/10 text-[10px] font-bold italic uppercase tracking-widest">Pure Logic</div>
                           )}
                         </div>
@@ -282,8 +291,9 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
                       >
                         <Trash2 className="w-4.5 h-4.5" />
                       </button>
-                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-400 transition-all shadow-xl active:scale-95">
-                        <ExternalLink className="w-4.5 h-4.5 md:w-5 md:h-5" />
+                      <div className="h-9 px-4 md:h-10 md:px-5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center gap-2 text-blue-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-400 transition-all shadow-xl active:scale-95">
+                        <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest">View</span>
+                        <ExternalLink className="w-3.5 h-3.5 md:w-4 md:h-4" />
                       </div>
                     </div>
                   </div>
