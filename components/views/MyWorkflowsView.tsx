@@ -221,10 +221,10 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
 
                     {/* Stats (Mobile Unified Row) */}
                     <div className="flex-none flex flex-row items-center justify-between md:justify-end gap-3 md:gap-10 md:px-8 border-t md:border-t-0 border-white/5 pt-4 md:pt-0">
-                      <div className="flex items-center gap-6">
+                      <div className="flex items-start gap-6">
                         {/* Architecture */}
-                        <div className="flex flex-col items-start justify-start h-full">
-                          <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.2em] mb-2 h-3 flex items-center">Architecture</span>
+                        <div className="flex flex-col items-start">
+                          <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.2em] mb-2 leading-none">Architecture</span>
                           <span className="text-white font-bold text-sm flex items-center gap-2 grayscale group-hover:grayscale-0 transition-all drop-shadow-md">
                             <Layers className="w-4 h-4 text-blue-400/80" />
                             <span>{nodeCount} Nodes</span>
@@ -233,20 +233,20 @@ export function MyWorkflowsView({ onSelect }: { onSelect: (workflow: SavedWorkfl
 
                         {/* Mobile Integrations (Hidden on LG since desktop view is below) */}
                         {tools.length > 0 && (
-                          <div className="flex lg:hidden flex-col items-start justify-start h-full">
-                            <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.2em] mb-2 h-3 flex items-center">Tools</span>
-                            <div className="flex items-center -space-x-1.5 pt-0.5">
+                          <div className="flex lg:hidden flex-col items-start">
+                            <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.2em] mb-2 leading-none">Tools</span>
+                            <div className="flex items-center -space-x-1.5 h-6">
                               {tools.slice(0, 2).map((tool, idx) => (
                                 <div 
                                   key={idx}
-                                  className="w-7 h-7 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-[8px] font-black text-white/60 backdrop-blur-md ring-1 ring-black shadow-lg"
+                                  className="w-6 h-6 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-[8px] font-black text-white/60 backdrop-blur-md ring-1 ring-black shadow-lg"
                                   title={typeof tool === 'string' ? tool : 'Tool'}
                                 >
                                   {(typeof tool === 'string' ? tool.slice(0, 2) : '??').toUpperCase()}
                                 </div>
                               ))}
                               {tools.length > 2 && (
-                                <div className="w-7 h-7 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[8px] font-black text-blue-400 backdrop-blur-md ring-1 ring-black shadow-lg">
+                                <div className="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[8px] font-black text-blue-400 backdrop-blur-md ring-1 ring-black shadow-lg">
                                   +{tools.length - 2}
                                 </div>
                               )}
