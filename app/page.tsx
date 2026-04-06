@@ -32,9 +32,11 @@ export default function Home() {
   const [messages, setMessages] = useState<{ role: string, parts: { text: string }[] }[]>([])
 
   useEffect(() => {
+    // 1. Loader Sequences (User-matched timings)
     const timer = setTimeout(() => setIsInitialLoading(false), 5000)
     const appTimer = setTimeout(() => setIsAppVisible(true), 5500)
     
+    // 2. Handle Share Link Deep Linking (Once on mount)
     const params = new URLSearchParams(window.location.search)
     const shareId = params.get("s")
     if (shareId) {
@@ -50,6 +52,13 @@ export default function Home() {
       clearTimeout(appTimer)
     }
   }, [])
+
+  // 3. Global Scroll Reset on View Transitions
+  useEffect(() => {
+    if (window?.scrollTo) {
+      window.scrollTo({ top: 0, behavior: 'instant' })
+    }
+  }, [activeTab, appView])
 
   const handleDuplicateWorkflow = async (duplicateData: WorkflowResponse, prompt: string) => {
     const now = new Date().toISOString()

@@ -314,18 +314,20 @@ export function WorkflowGraph({
           className="!flex !flex-row !justify-around !bg-black/95 !border-white/10 !shadow-[0_8px_32px_rgba(0,0,0,0.5)] !rounded-xl overflow-hidden scale-75 sm:scale-[0.95] !p-1 [&_button]:!bg-transparent [&_button]:!border-none [&_button_svg]:!fill-white/60 [&_button]:hover:!bg-white/10 [&_button]:!transition-colors !mb-[120px] sm:!mb-[135px] !ml-[20px] origin-bottom-left"
         />
 
-        <MiniMap
-          position="bottom-left"
-          style={{ width: isMobile ? 120 : 150, height: isMobile ? 80 : 100 }}
-          className="!bg-black/80 !border-white/10 !rounded-2xl !shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden scale-65 sm:scale-[0.95] origin-bottom-left !mb-[16px] sm:!mb-[20px] !ml-[20px]"
-          maskColor="rgba(255,255,255,0.03)"
-          maskStrokeColor="rgba(255,255,255,0.2)"
-          maskStrokeWidth={2}
-          nodeColor={(n) => getTypeAccent(n.data?.type as string) || '#a78bfa'}
-          nodeStrokeWidth={3}
-          zoomable
-          pannable
-        />
+        {!isMobile && (
+          <MiniMap
+            position="bottom-left"
+            style={{ width: 150, height: 100 }}
+            className="!bg-black/80 !border-white/10 !rounded-2xl !shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden origin-bottom-left !mb-[20px] !ml-[20px]"
+            maskColor="rgba(255,255,255,0.03)"
+            maskStrokeColor="rgba(255,255,255,0.2)"
+            maskStrokeWidth={2}
+            nodeColor={(n) => getTypeAccent(n.data?.type as string) || '#a78bfa'}
+            nodeStrokeWidth={3}
+            zoomable
+            pannable
+          />
+        )}
 
 
 
