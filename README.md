@@ -1,5 +1,4 @@
 # Thinkly - The AI Workflow Copilot
-### Assignment Submission | Software Engineering Role | Thinkly Labs
 
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-View_Live_Demo-white?logo=vercel&logoColor=black&style=for-the-badge)](https://thinkly-ai.vercel.app)
 [![GitHub Repo](https://img.shields.io/badge/GitHub-View_Source-181717?logo=github&style=for-the-badge)](https://github.com/Shashank519915/Thinkly)
