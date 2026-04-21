@@ -29,7 +29,7 @@ export function HeroInput({ onGenerate, loading }: { onGenerate: (text: string, 
   const [triggerCondition, setTriggerCondition] = useState("")
   const [hours, setHours] = useState("5")
   const [teamSize, setTeamSize] = useState("1-5")
-  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash")
+  const [selectedModel, setSelectedModel] = useState("gemma-4-31b-it")
 
   // Rotating Placeholder Logic
   const [placeholderIndex, setPlaceholderIndex] = useState(0)
